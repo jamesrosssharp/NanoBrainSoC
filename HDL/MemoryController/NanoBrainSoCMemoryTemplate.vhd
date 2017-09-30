@@ -7,7 +7,7 @@ use ieee.std_logic_1164.all;
 entity NanoBrainSoCMemoryTemplate is
 
   generic
-      (
+    (
       DATA_WIDTH : natural := 16;
       ADDR_WIDTH : natural := 11
       );
@@ -19,7 +19,7 @@ entity NanoBrainSoCMemoryTemplate is
       data : in  std_logic_vector((DATA_WIDTH - 1) downto 0);
       we   : in  std_logic := '1';
       q    : out std_logic_vector((DATA_WIDTH - 1) downto 0)
-    );
+      );
 
 end entity;
 
@@ -30,11 +30,21 @@ architecture rtl of NanoBrainSoCMemoryTemplate is
   type memory_t is array(2**ADDR_WIDTH - 1 downto 0) of word_t;
 
   -- Declare the RAM signal.    
-  signal ram : memory_t := (0      => "0101010101010101",
-                            1      => "1010101010101010",
-                            2      => "1100110011001100",
-                            3      => "1111000011110000",
-                            others => "1111111100000000"
+  signal ram : memory_t := (0      => "0000000000000100",  -- IMM 0x0004
+                            1      => "0110101000001000",  -- LOAD r0, 0x8
+                            2      => "0110101000010000",  -- LOAD r1, 0x0
+                            3      => "0100011100000000",  -- NOP
+                            4      => "0100011100000000",  -- NOP
+                            5      => "0100011100000000",  -- NOP
+                            6      => "1111110000000001",  -- OUT  r0, r1 (0x48 = 'H')
+                            7      => "0000000000000110",  -- IMM 0x0006
+                            8      => "0110101000000101",  -- LOAD r0, 0x5
+                            9      => "0100011100000000",  -- NOP
+                            10     => "0100011100000000",  -- NOP
+                            11     => "0100011100000000",  -- NOP
+                            12     => "1111110000000001",  -- OUT  r0, r1 (0x65 = 'e')
+                            13     => "0000000000000111",
+                            others => "1111111111111111"
                             );
 
   -- Register to hold the address 
