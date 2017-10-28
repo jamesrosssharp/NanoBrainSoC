@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <functional>
 
 #include "Symbol.h"
 
@@ -36,6 +37,16 @@ struct ExpressionElement
         int     sval;
         float   fval;
     } v;
+
+	int32_t charLiteralValue()
+	{
+		if (elem == ExpressionElementType::kCharLiteral)
+		{
+			return (int32_t)v.string[0];
+		}
+		throw std::runtime_error("Not a char literal!");
+	}
+
 };
 
 struct Expression
@@ -51,14 +62,17 @@ struct Expression
     {
         elements.clear();
         lineNum = 0;
-    }
+		value = 0;
+	}
 
     uint32_t lineNum;
 
+	int32_t value;
+
     bool evaluate(int32_t& value, SymbolTable& syms);
+	bool isStringLiteral(char*& stringLit);
 
-    int32_t doPlusMinus(int32_t accu, ExpressionElementType& op, int32_t value);
+    Expression doOp(ExpressionElementType type, std::function<int32_t (int32_t left, int32_t right)> func);
 
-    Expression doMultDiv();
 };
 

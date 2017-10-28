@@ -10,7 +10,7 @@ struct Symbol
 {
     char* string;
     int32_t value = 0;
-    bool evaluted = false;
+	bool evaluated = false;
 
     std::vector<Statement*> referredBy;
     Statement* definedIn;

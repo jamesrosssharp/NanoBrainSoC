@@ -1737,15 +1737,18 @@ int main(int, char**) {
   // build symbol table
 
   g_ast.buildSymbolTable();
-  g_ast.printSymbolTable();
 
   // first pass assemble
 
   g_ast.firstPassAssemble();
 
+  g_ast.printAssembly();
+
   // resolve symbols
 
   g_ast.resolveSymbols();
+
+  g_ast.printSymbolTable();
 
   // evaluate expressions
 
@@ -1754,6 +1757,9 @@ int main(int, char**) {
   // generate assembly
 
   g_ast.assemble();
+
+  g_ast.printAssembly();
+
 
   // output binary file
 

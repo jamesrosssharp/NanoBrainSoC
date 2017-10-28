@@ -6,6 +6,7 @@
 #include <sstream>
 #include <utility>
 #include <cstdint>
+#include <iomanip>
 
 #include "AST.h"
 
@@ -133,7 +134,7 @@ void AST::addCharLiteralToCurrentStatementExpression(char* string)
     m_currentStatement.expression.addElement(e);
 }
 
-void AST::addTwoRegisterOpcode(int linenum, char* opcode, char* regSrc, char* regDest)
+void AST::addTwoRegisterOpcode(int linenum, char* opcode, char* regDest, char* regSrc)
 {
     m_currentStatement.lineNum = linenum;
     m_currentStatement.opcode = convertOpCode(opcode);
@@ -179,7 +180,7 @@ void AST::addExpressionPseudoOp(int linenum, char* pseudoOp)
     m_currentStatement.lineNum = linenum;
     m_currentStatement.pseudoOp = convertPseudoOp(pseudoOp);
     m_currentStatement.expression.lineNum = linenum;
-    m_currentStatement.type = StatementType::PSEDUO_OP_WITH_EXPRESSION;
+	m_currentStatement.type = StatementType::PSEUDO_OP_WITH_EXPRESSION;
     m_statements.push_back(m_currentStatement);
     m_currentStatement.reset();
 }
@@ -463,11 +464,7 @@ PseudoOp AST::convertPseudoOp(char* pseudoOp)
     {
         return PseudoOp::ALIGN;
     }
-    else if (s == "DB")
-    {
-        return PseudoOp::DB;
-    }
-    else if (s == "DW")
+	else if (s == "DW")
     {
         return PseudoOp::DW;
     }
@@ -618,7 +615,6 @@ Register AST::convertReg(char* reg)
     return Register::None;
 }
 
-
 std::ostream& operator << (std::ostream& os, const AST& ast)
 {
     for (const Statement& s : ast.m_statements)
@@ -643,7 +639,7 @@ std::ostream& operator << (std::ostream& os, const Statement& s)
         case StatementType::OPCODE_WITH_EXPRESSION:
             os << s.opcode << " " << s.expression << std::endl;
         break;
-        case StatementType::PSEDUO_OP_WITH_EXPRESSION:
+		case StatementType::PSEUDO_OP_WITH_EXPRESSION:
             os << s.pseudoOp << " " << s.expression << std::endl;
         break;
         case StatementType::STANDALONE_OPCODE:
@@ -985,11 +981,7 @@ std::ostream& operator << (std::ostream& os, const PseudoOp& ps)
     {
         os << "ALIGN";
     }
-    else if (ps == PseudoOp::DB)
-    {
-        os << "DB";
-    }
-    else if (ps == PseudoOp::DW)
+	else if (ps == PseudoOp::DW)
     {
         os << "DW";
     }
@@ -1010,6 +1002,7 @@ std::ostream& operator << (std::ostream& os, const Symbol& sym)
     os << " Referred to by: ";
     for (Statement* s : sym.referredBy)
         os << s << " ";
+	os << " Evaluated: " << sym.evaluated << " value: " << sym.value;
     return os;
 }
 
@@ -1048,6 +1041,7 @@ void AST::buildSymbolTable()
             }
 
             m_symbolTable.emplace(s.label, sym);
+			m_symbolList.push_back(&m_symbolTable.at(s.label));
         }
     }
 
@@ -1059,7 +1053,7 @@ void AST::buildSymbolTable()
         {
             case StatementType::ONE_REGISTER_OPCODE_AND_EXPRESSION:
             case StatementType::OPCODE_WITH_EXPRESSION:
-            case StatementType::PSEDUO_OP_WITH_EXPRESSION:
+			case StatementType::PSEUDO_OP_WITH_EXPRESSION:
             case StatementType::TIMES:
             {
                 // find any string in the expression, which could be a symbol
@@ -1117,26 +1111,48 @@ void AST::firstPassAssemble()
         switch (s.type)
         {
             case StatementType::LABEL:
+				s.address = curAddress;
+				isTimes = false;
+				break;
             case StatementType::EQU:
                 isTimes = false;
-                break;
+				break;
             case StatementType::ONE_REGISTER_OPCODE_AND_EXPRESSION:
                 assemblyStarted = true;
-                s.firstPassAssemble(curAddress);
+
+				if (isTimes)
+				{
+					s.timesStatement = timesStatement;
+				}
+
+				s.firstPassAssemble(curAddress, m_symbolTable);
                 isTimes = false;
                 break;
             case StatementType::OPCODE_WITH_EXPRESSION:
                 assemblyStarted = true;
-                s.firstPassAssemble(curAddress);
+
+				if (isTimes)
+				{
+					s.timesStatement = timesStatement;
+				}
+
+				s.firstPassAssemble(curAddress, m_symbolTable);
                 isTimes = false;
                 break;
             case StatementType::TWO_REGISTER_OPCODE:
-                assemblyStarted = true;
+			case StatementType::STANDALONE_OPCODE:
+				assemblyStarted = true;
                 // we can directly assemble the instruction.
-                s.assemble(curAddress);
+
+				if (isTimes)
+				{
+					s.timesStatement = timesStatement;
+				}
+
+				s.assemble(curAddress);
                 isTimes = false;
                 break;
-            case StatementType::PSEDUO_OP_WITH_EXPRESSION:
+			case StatementType::PSEUDO_OP_WITH_EXPRESSION:
 
                 switch (s.pseudoOp)
                 {
@@ -1173,7 +1189,13 @@ void AST::firstPassAssemble()
 
                         break;
                     default:
-                        s.firstPassAssemble(curAddress);
+
+						if (isTimes)
+						{
+							s.timesStatement = timesStatement;
+						}
+
+						s.firstPassAssemble(curAddress, m_symbolTable);
                 }
 
                 isTimes = false;
@@ -1181,7 +1203,15 @@ void AST::firstPassAssemble()
             case StatementType::TIMES:
 
                 timesStatement = &s;
-                isTimes = true;
+
+				if (! s.expression.evaluate(s.expression.value, m_symbolTable))
+				{
+					std::stringstream ss;
+					ss << ".times statement cannot be evaluated on line " << s.lineNum << std::endl;
+					throw std::runtime_error(ss.str());
+				}
+
+				isTimes = true;
 
                 break;
             default:
@@ -1192,6 +1222,40 @@ void AST::firstPassAssemble()
 
 void AST::resolveSymbols()
 {
+
+	// Iterate over all symbols and resolve their values
+
+	// 1. get address of all labels
+
+	for (Symbol* sym : m_symbolList)
+	{
+		Statement* statement = sym->definedIn;
+
+		if (statement->type == StatementType::LABEL)
+		{
+			sym->value = statement->address;
+			sym->evaluated = true;
+		}
+	}
+
+	for (Symbol* sym : m_symbolList)
+	{
+		if (! sym->evaluated)
+		{
+			Statement*  statement = sym->definedIn;
+			int32_t		value	  = 0;
+
+			if (! statement->expression.evaluate(value, m_symbolTable))
+			{
+				std::stringstream ss;
+				ss << "could not evaluate expression on line " << statement->lineNum << std::endl;
+				throw std::runtime_error(ss.str());
+			}
+
+			sym->value = value;
+			sym->evaluated = true;
+		}
+	}
 
 }
 
@@ -1210,3 +1274,19 @@ void AST::writeBinOutput(std::string path)
 
 }
 
+void AST::printAssembly()
+{
+
+	for (Statement&s : m_statements)
+	{
+		std::cout << std::hex << std::setfill('0') << std::setw(6) << s.address << " : ";
+
+		for (uint16_t w : s.assembledWords)
+		{
+			std::cout << std::setfill('0') << std::setw(4) << w << " ";
+		}
+
+		std::cout << std::endl;
+	}
+
+}

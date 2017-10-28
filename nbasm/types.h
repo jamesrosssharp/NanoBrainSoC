@@ -102,7 +102,6 @@ enum class PseudoOp : uint32_t
 {
     ORG,
     ALIGN,
-    DB,
     DW,
     DD,
     None

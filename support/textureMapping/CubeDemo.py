@@ -571,7 +571,7 @@ zr = 0.0
 
 xt = 0.0
 yt = 0.0
-zt = 1.5
+zt = 2.5
 
 ANGULAR_SPEED = 0.05
 
@@ -598,7 +598,7 @@ while running:
 	if runDemo:
 		xr = 4.0*math.sin(frame / 10.0)
 		yr = 2.0*math.sin(frame / 10.0)
-		zt = 2.0 + 1.0 * math.cos(frame / 10.0)
+		zt = 2.5 + 1.0 * math.cos(frame / 10.0)
 
 
 	# make vertices for all six faces of the cube
@@ -675,7 +675,7 @@ while running:
 	vn8 = vn8 / vn8.norm()
 
 	rotMat =  Matrix4.makeRot(xr, yr, zr)
-	modelWorldView = Matrix4.makePerspective(1.0, 1.5, 0.1, 100.0) * Matrix4.makeTranslate(xt, yt, zt) * rotMat
+	modelWorldView = Matrix4.makePerspective(3.0, 10.0, 0.1, 100.0) * Matrix4.makeTranslate(xt, yt, zt) * rotMat
 
 	for v in [vn1, vn2, vn3, vn4, vn5, vn6, vn7, vn8]:
 		# vertex normals don't need to be translated or projected

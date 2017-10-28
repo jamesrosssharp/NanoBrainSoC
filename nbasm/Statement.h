@@ -6,13 +6,15 @@
 #include "types.h"
 #include "Expression.h"
 
+#include "Symbol.h"
+
 enum class StatementType
 {
     None,
     TWO_REGISTER_OPCODE,
     ONE_REGISTER_OPCODE_AND_EXPRESSION,
     OPCODE_WITH_EXPRESSION,
-    PSEDUO_OP_WITH_EXPRESSION,
+	PSEUDO_OP_WITH_EXPRESSION,
     STANDALONE_OPCODE,
     LABEL,
     TIMES,
@@ -34,13 +36,14 @@ struct Statement
 
     char*       label;
 
-    std::vector<uint16_t> assembledBytes;
+	std::vector<uint16_t> assembledWords;
     uint32_t address;
 
-    Statement* timeStatement = nullptr;
+	Statement* timesStatement = nullptr;
+	int32_t repetitionCount = 1;
 
-    void firstPassAssemble(uint32_t &curAddress);
-    void assemble(uint32_t &curAddress);
+	void firstPassAssemble(uint32_t &curAddress, SymbolTable& syms);
+	void assemble(uint32_t &curAddress);
 
     void reset();
 

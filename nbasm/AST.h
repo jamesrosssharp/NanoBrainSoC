@@ -60,6 +60,8 @@ public:
    void assemble();
    void writeBinOutput(std::string path);
 
+   void printAssembly();
+
    friend std::ostream& operator << (std::ostream&, const AST&);
 
 private:
@@ -68,7 +70,8 @@ private:
 
     std::vector<Statement> m_statements;
 
-    SymbolTable m_symbolTable;
+	SymbolTable m_symbolTable; // symbol table as a map for fast access when evaluating expressions
+	std::vector<Symbol*> m_symbolList;  // a vector of symbols in order found in file for correct evaluation
 
 };
 

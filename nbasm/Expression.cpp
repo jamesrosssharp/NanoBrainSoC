@@ -20,6 +20,8 @@ bool Expression::evaluate(int32_t &value, SymbolTable &syms)
     uint32_t            stackDepth = 0;
     Expression* curExp = &e;
 
+    e.lineNum = lineNum;
+
     for (ExpressionElement& elem : elements)
     {
 
@@ -29,6 +31,7 @@ bool Expression::evaluate(int32_t &value, SymbolTable &syms)
                 if (stackDepth == 0)
                 {
                     curExp = &sube;
+                    sube.lineNum = lineNum;
                     sube.reset();
                 }
                 else
@@ -85,8 +88,11 @@ bool Expression::evaluate(int32_t &value, SymbolTable &syms)
                     throw std::runtime_error(ss.str());
                 }
 
-                if (! sym->evaluted)
+				if (! sym->evaluated)
+				{
+					std::cout << "Symbol " << sym->string << " not evaluated." << std::endl;
                     return false;
+				}
 
                 ExpressionElement symElem;
                 symElem.elem = ExpressionElementType::kInt;
@@ -105,90 +111,69 @@ bool Expression::evaluate(int32_t &value, SymbolTable &syms)
 
     // - recursively reduce expression (TODO: operator precedence?)
 
+        // unary plus / minus, not
+
+
         // mult, div
 
-    e = e.doMultDiv();
+    e = e.doOp(ExpressionElementType::kMult, [] (int32_t left, int32_t right) -> int32_t { return left * right; });
+    e = e.doOp(ExpressionElementType::kDiv, [] (int32_t left, int32_t right) -> int32_t { return left / right; });
 
+        // add, subtract
+
+    e = e.doOp(ExpressionElementType::kPlus, [] (int32_t left, int32_t right) -> int32_t { return left + right; });
+    e = e.doOp(ExpressionElementType::kMinus, [] (int32_t left, int32_t right) -> int32_t { return left - right; });
 
         // shl, shr
 
+    e = e.doOp(ExpressionElementType::kShiftLeft, [] (int32_t left, int32_t right) -> int32_t { return left << right; });
+    e = e.doOp(ExpressionElementType::kShiftRight, [] (int32_t left, int32_t right) -> int32_t { return left >> right; });
 
-        // and, or
+        // and
 
-        // not
+    e = e.doOp(ExpressionElementType::kAnd, [] (int32_t left, int32_t right) -> int32_t { return left & right; });
 
-        // unary plus / minus
+        // xor
 
-    // Expression now contains integers, plusses and minuses. Simply accumulate from left to right
+    e = e.doOp(ExpressionElementType::kXor, [] (int32_t left, int32_t right) -> int32_t { return left ^ right; });
 
+        // or
 
-    int32_t accu = 0;
+    e = e.doOp(ExpressionElementType::kOr, [] (int32_t left, int32_t right) -> int32_t { return left | right; });
 
-    ExpressionElementType op = ExpressionElementType::kPlus;
+    // expression should now consist of a single integer
 
-    for (ExpressionElement& elem : e.elements)
+    if (e.elements.size() != 1 ||
+			! (e.elements[0].elem == ExpressionElementType::kInt ||
+			   e.elements[0].elem == ExpressionElementType::kUInt ||
+			   e.elements[0].elem == ExpressionElementType::kCharLiteral))
     {
-
-        switch (elem.elem)
-        {
-            case ExpressionElementType::kPlus:
-            case ExpressionElementType::kMinus:
-                op = elem.elem;
-                break;
-            case ExpressionElementType::kInt:
-                accu = doPlusMinus(accu, op, elem.v.sval);
-                break;
-            case ExpressionElementType::kUInt:
-                accu = doPlusMinus(accu, op, elem.v.uval);
-                break;
-            case ExpressionElementType::kCharLiteral:
-                accu = doPlusMinus(accu, op, (int32_t)elem.v.string[0]);
-                break;
-            default:
-                std::stringstream ss;
-                ss << "unexpected element, on line " << lineNum << std::endl;
-                throw std::runtime_error(ss.str());
-                break;
-        }
-
-
+        std::stringstream ss;
+		ss << "Expression couldn't be reduced on line " << lineNum << " " << e.elements.size() << std::endl;
+        throw std::runtime_error(ss.str());
+    }
+    else
+    {
+		if (e.elements[0].elem == ExpressionElementType::kCharLiteral)
+		{
+			value = e.elements[0].charLiteralValue();
+		}
+		else
+		{
+			value = e.elements[0].v.sval;
+		}
     }
 
-
-    value = accu;
 
     return true;
 }
 
-int32_t Expression::doPlusMinus(int32_t accu, ExpressionElementType& op, int32_t value)
-{
-    switch(op)
-    {
-        case ExpressionElementType::kNone:
-        {
-            std::stringstream ss;
-            ss << "operator expected on line " << lineNum << std::endl;
-            throw std::runtime_error(ss.str());
-            break;
-        }
-        case ExpressionElementType::kPlus:
-            accu = accu + value;
-            break;
-        case ExpressionElementType::kMinus:
-            accu = accu - value;
-            break;
-    }
-    op = ExpressionElementType::kNone;
-    return accu;
-}
 
-
-Expression Expression::doMultDiv()
+Expression Expression::doOp(ExpressionElementType type, std::function<int32_t (int32_t left, int32_t right)> func)
 {
-    // Recursively replace multiplications and divisions, left to right, with their evaluated values
 
     Expression e;
-    bool foundMultDiv = false;
+    bool foundOp = false;
 
     ExpressionElementType op = ExpressionElementType::kNone;
 
@@ -196,86 +181,86 @@ Expression Expression::doMultDiv()
 
     int idx = 1;
 
+    e.lineNum = lineNum;
+
     for (ExpressionElement& mid : elements)
     {
 
-        switch (mid.elem)
+        if (mid.elem == type)
         {
-            case ExpressionElementType::kMult:
-            case ExpressionElementType::kDiv:
-            {
-                foundMultDiv = true;
 
-                ExpressionElement* right;
+            foundOp = true;
 
-                try {
-                    right = &elements.at(idx);
-                }
-                catch (std::out_of_range)
-                {
-                    std::stringstream ss;
-                    ss << "multiplication / division without right operand on line " << lineNum << std::endl;
-                    throw std::runtime_error(ss.str());
-                }
+            ExpressionElement* right;
 
-                int32_t lval, rval;
-
-                switch (left->elem)
-                {
-                    case ExpressionElementType::kInt:
-                        lval = left->v.sval;
-                        break;
-                    case ExpressionElementType::kUInt:
-                        lval = left->v.uval;
-                        break;
-                    case ExpressionElementType::kCharLiteral:
-                        lval = (int32_t)left->v.string[0];
-                        break;
-                    default:
-                        std::stringstream ss;
-                        ss << "unexpected element, on line " << lineNum << std::endl;
-                        throw std::runtime_error(ss.str());
-                        break;
-                }
-
-                switch (right->elem)
-                {
-                    case ExpressionElementType::kInt:
-                        rval = right->v.sval;
-                        break;
-                    case ExpressionElementType::kUInt:
-                        rval = right->v.uval;
-                        break;
-                    case ExpressionElementType::kCharLiteral:
-                        rval = (int32_t)right->v.string[0];
-                        break;
-                    default:
-                        std::stringstream ss;
-                        ss << "unexpected element, on line " << lineNum << std::endl;
-                        throw std::runtime_error(ss.str());
-                        break;
-                }
-
-                int32_t value = mid.elem == ExpressionElementType::kMult ? lval * rval : lval / rval;
-
-                ExpressionElement result;
-
-                result.v.sval = value;
-                result.elem = ExpressionElementType::kInt;
-
-                e.addElement(result);
-
-                // Add in rest of elements to expression
-
-                for (int i = idx + 1; i < elements.size(); i++)
-                    e.addElement(elements[i]);
-
-                goto done;
+            try {
+                right = &elements.at(idx);
             }
-            default:
-                if (left != nullptr)
-                    e.addElement(*left);
-                break;
+            catch (std::out_of_range)
+            {
+                std::stringstream ss;
+                ss << "multiplication / division without right operand on line " << lineNum << std::endl;
+                throw std::runtime_error(ss.str());
+            }
+
+            int32_t lval, rval;
+
+            switch (left->elem)
+            {
+                case ExpressionElementType::kInt:
+                    lval = left->v.sval;
+                    break;
+                case ExpressionElementType::kUInt:
+                    lval = left->v.uval;
+                    break;
+                case ExpressionElementType::kCharLiteral:
+                    lval = (int32_t)left->v.string[0];
+                    break;
+                default:
+                    std::stringstream ss;
+                    ss << "unexpected element, on line " << lineNum << std::endl;
+                    throw std::runtime_error(ss.str());
+                    break;
+            }
+
+            switch (right->elem)
+            {
+                case ExpressionElementType::kInt:
+                    rval = right->v.sval;
+                    break;
+                case ExpressionElementType::kUInt:
+                    rval = right->v.uval;
+                    break;
+                case ExpressionElementType::kCharLiteral:
+                    rval = (int32_t)right->v.string[0];
+                    break;
+                default:
+                    std::stringstream ss;
+                    ss << "unexpected element, on line " << lineNum << std::endl;
+                    throw std::runtime_error(ss.str());
+                    break;
+            }
+
+            int32_t value = func(lval, rval);
+
+            ExpressionElement result;
+
+            result.v.sval = value;
+            result.elem = ExpressionElementType::kInt;
+
+            e.addElement(result);
+
+            // Add in rest of elements to expression
+
+            for (int i = idx + 1; i < elements.size(); i++)
+                e.addElement(elements[i]);
+
+            goto done;
+        }
+        else
+        {
+            if (left != nullptr)
+                e.addElement(*left);
         }
 
         left = &mid;
@@ -286,9 +271,18 @@ Expression Expression::doMultDiv()
         e.addElement(*left);
 
 done:
-    if (foundMultDiv)
-        return e.doMultDiv();
+    if (foundOp)
+        return e.doOp(type, func);
     else
         return e;
+}
 
+bool Expression::isStringLiteral(char*& stringLit)
+{
+	if (elements.size() == 1 && elements[0].elem == ExpressionElementType::kStringLiteral)
+	{
+		stringLit = elements[0].v.string;
+		return true;
+	}
+	return false;
 }
