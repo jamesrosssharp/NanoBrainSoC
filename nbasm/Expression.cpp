@@ -16,8 +16,8 @@ bool Expression::evaluate(int32_t &value, SymbolTable &syms)
     //
     // - scan for sub-expressions and recursively evaluate
 
-	Expression  e, sube;
-	uint32_t    stackDepth = 0;
+    Expression  e, sube;
+    uint32_t    stackDepth = 0;
     Expression* curExp = &e;
 
     e.lineNum = lineNum;
@@ -25,7 +25,7 @@ bool Expression::evaluate(int32_t &value, SymbolTable &syms)
     for (ExpressionElement& elem : elements)
     {
 
-		switch (elem.elem)
+        switch (elem.elem)
         {
             case ExpressionElementType::kLeftParenthesis:
                 if (stackDepth == 0)
@@ -63,7 +63,7 @@ bool Expression::evaluate(int32_t &value, SymbolTable &syms)
                         ExpressionElement subElem;
                         subElem.elem = ExpressionElementType::kInt;
                         subElem.v.sval = subValue;
-						e.addElement(subElem);
+                        e.addElement(subElem);
                     }
                 }
                 else
@@ -88,16 +88,15 @@ bool Expression::evaluate(int32_t &value, SymbolTable &syms)
                     throw std::runtime_error(ss.str());
                 }
 
-				if (! sym->evaluated)
-				{
-					std::cout << "Symbol " << sym->string << " not evaluated." << std::endl;
+                if (! sym->evaluated)
+                {
                     return false;
-				}
+                }
 
                 ExpressionElement symElem;
                 symElem.elem = ExpressionElementType::kInt;
                 symElem.v.sval = sym->value;
-				curExp->addElement(symElem);
+                curExp->addElement(symElem);
 
                 break;
             }
@@ -143,24 +142,24 @@ bool Expression::evaluate(int32_t &value, SymbolTable &syms)
     // expression should now consist of a single integer
 
     if (e.elements.size() != 1 ||
-			! (e.elements[0].elem == ExpressionElementType::kInt ||
-			   e.elements[0].elem == ExpressionElementType::kUInt ||
-			   e.elements[0].elem == ExpressionElementType::kCharLiteral))
+            ! (e.elements[0].elem == ExpressionElementType::kInt ||
+               e.elements[0].elem == ExpressionElementType::kUInt ||
+               e.elements[0].elem == ExpressionElementType::kCharLiteral))
     {
         std::stringstream ss;
-		ss << "Expression couldn't be reduced on line " << lineNum << " " << e.elements.size() << std::endl;
+        ss << "Expression couldn't be reduced on line " << lineNum << " " << e.elements.size() << std::endl;
         throw std::runtime_error(ss.str());
     }
     else
     {
-		if (e.elements[0].elem == ExpressionElementType::kCharLiteral)
-		{
-			value = e.elements[0].charLiteralValue();
-		}
-		else
-		{
-			value = e.elements[0].v.sval;
-		}
+        if (e.elements[0].elem == ExpressionElementType::kCharLiteral)
+        {
+            value = e.elements[0].charLiteralValue();
+        }
+        else
+        {
+            value = e.elements[0].v.sval;
+        }
     }
 
     return true;
@@ -203,12 +202,12 @@ Expression Expression::doOp(ExpressionElementType type, std::function<int32_t (i
 
             int32_t lval, rval;
 
-			if (left == nullptr)
-			{
-				std::stringstream ss;
-				ss << "binary operator " << (uint32_t)type << " without left operand on line " << lineNum << std::endl;
-				throw std::runtime_error(ss.str());
-			}
+            if (left == nullptr)
+            {
+                std::stringstream ss;
+                ss << "binary operator " << (uint32_t)type << " without left operand on line " << lineNum << std::endl;
+                throw std::runtime_error(ss.str());
+            }
 
             switch (left->elem)
             {
@@ -284,10 +283,10 @@ done:
 
 bool Expression::isStringLiteral(char*& stringLit)
 {
-	if (elements.size() == 1 && elements[0].elem == ExpressionElementType::kStringLiteral)
-	{
-		stringLit = elements[0].v.string;
-		return true;
-	}
-	return false;
+    if (elements.size() == 1 && elements[0].elem == ExpressionElementType::kStringLiteral)
+    {
+        stringLit = elements[0].v.string;
+        return true;
+    }
+    return false;
 }

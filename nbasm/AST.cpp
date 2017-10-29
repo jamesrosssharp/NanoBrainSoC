@@ -145,11 +145,11 @@ void AST::addTwoRegisterOpcode(int linenum, char* opcode, char* regDest, char* r
     m_currentStatement.reset();
 }
 
-void AST::addOneRegisterAndExpressionOpcode(int linenum, char* opcode, char* regSrc)
+void AST::addOneRegisterAndExpressionOpcode(int linenum, char* opcode, char* regDest)
 {
     m_currentStatement.lineNum = linenum;
     m_currentStatement.opcode = convertOpCode(opcode);
-    m_currentStatement.regSrc = convertReg(regSrc);
+    m_currentStatement.regDest = convertReg(regDest);
     m_currentStatement.type = StatementType::ONE_REGISTER_OPCODE_AND_EXPRESSION;
     m_currentStatement.expression.lineNum = linenum;
     m_statements.push_back(m_currentStatement);
@@ -180,7 +180,7 @@ void AST::addExpressionPseudoOp(int linenum, char* pseudoOp)
     m_currentStatement.lineNum = linenum;
     m_currentStatement.pseudoOp = convertPseudoOp(pseudoOp);
     m_currentStatement.expression.lineNum = linenum;
-	m_currentStatement.type = StatementType::PSEUDO_OP_WITH_EXPRESSION;
+    m_currentStatement.type = StatementType::PSEUDO_OP_WITH_EXPRESSION;
     m_statements.push_back(m_currentStatement);
     m_currentStatement.reset();
 }
@@ -464,7 +464,7 @@ PseudoOp AST::convertPseudoOp(char* pseudoOp)
     {
         return PseudoOp::ALIGN;
     }
-	else if (s == "DW")
+    else if (s == "DW")
     {
         return PseudoOp::DW;
     }
@@ -631,15 +631,15 @@ std::ostream& operator << (std::ostream& os, const Statement& s)
    switch(s.type)
     {
         case StatementType::ONE_REGISTER_OPCODE_AND_EXPRESSION:
-            os << s.opcode << " " << s.regSrc << " " << s.expression << std::endl;
+            os << s.opcode << " " << s.regDest << " " << s.expression << std::endl;
         break;
         case StatementType::TWO_REGISTER_OPCODE:
-            os << s.opcode << " " << s.regSrc << " " << s.regDest << std::endl;
+            os << s.opcode << " " << s.regDest << " " << s.regSrc << std::endl;
         break;
         case StatementType::OPCODE_WITH_EXPRESSION:
             os << s.opcode << " " << s.expression << std::endl;
         break;
-		case StatementType::PSEUDO_OP_WITH_EXPRESSION:
+        case StatementType::PSEUDO_OP_WITH_EXPRESSION:
             os << s.pseudoOp << " " << s.expression << std::endl;
         break;
         case StatementType::STANDALONE_OPCODE:
@@ -981,7 +981,7 @@ std::ostream& operator << (std::ostream& os, const PseudoOp& ps)
     {
         os << "ALIGN";
     }
-	else if (ps == PseudoOp::DW)
+    else if (ps == PseudoOp::DW)
     {
         os << "DW";
     }
@@ -1002,7 +1002,7 @@ std::ostream& operator << (std::ostream& os, const Symbol& sym)
     os << " Referred to by: ";
     for (Statement* s : sym.referredBy)
         os << s << " ";
-	os << " Evaluated: " << sym.evaluated << " value: " << sym.value;
+    os << " Evaluated: " << sym.evaluated << " value: " << sym.value;
     return os;
 }
 
@@ -1041,7 +1041,7 @@ void AST::buildSymbolTable()
             }
 
             m_symbolTable.emplace(s.label, sym);
-			m_symbolList.push_back(&m_symbolTable.at(s.label));
+            m_symbolList.push_back(&m_symbolTable.at(s.label));
         }
     }
 
@@ -1053,7 +1053,7 @@ void AST::buildSymbolTable()
         {
             case StatementType::ONE_REGISTER_OPCODE_AND_EXPRESSION:
             case StatementType::OPCODE_WITH_EXPRESSION:
-			case StatementType::PSEUDO_OP_WITH_EXPRESSION:
+            case StatementType::PSEUDO_OP_WITH_EXPRESSION:
             case StatementType::TIMES:
             {
                 // find any string in the expression, which could be a symbol
@@ -1111,48 +1111,48 @@ void AST::firstPassAssemble()
         switch (s.type)
         {
             case StatementType::LABEL:
-				s.address = curAddress;
-				isTimes = false;
-				break;
+                s.address = curAddress;
+                isTimes = false;
+                break;
             case StatementType::EQU:
                 isTimes = false;
-				break;
+                break;
             case StatementType::ONE_REGISTER_OPCODE_AND_EXPRESSION:
                 assemblyStarted = true;
 
-				if (isTimes)
-				{
-					s.timesStatement = timesStatement;
-				}
+                if (isTimes)
+                {
+                    s.timesStatement = timesStatement;
+                }
 
-				s.firstPassAssemble(curAddress, m_symbolTable);
+                s.firstPassAssemble(curAddress, m_symbolTable);
                 isTimes = false;
                 break;
             case StatementType::OPCODE_WITH_EXPRESSION:
                 assemblyStarted = true;
 
-				if (isTimes)
-				{
-					s.timesStatement = timesStatement;
-				}
+                if (isTimes)
+                {
+                    s.timesStatement = timesStatement;
+                }
 
-				s.firstPassAssemble(curAddress, m_symbolTable);
+                s.firstPassAssemble(curAddress, m_symbolTable);
                 isTimes = false;
                 break;
             case StatementType::TWO_REGISTER_OPCODE:
-			case StatementType::STANDALONE_OPCODE:
-				assemblyStarted = true;
+            case StatementType::STANDALONE_OPCODE:
+                assemblyStarted = true;
                 // we can directly assemble the instruction.
 
-				if (isTimes)
-				{
-					s.timesStatement = timesStatement;
-				}
+                if (isTimes)
+                {
+                    s.timesStatement = timesStatement;
+                }
 
-				s.assemble(curAddress);
+                s.assemble(curAddress);
                 isTimes = false;
                 break;
-			case StatementType::PSEUDO_OP_WITH_EXPRESSION:
+            case StatementType::PSEUDO_OP_WITH_EXPRESSION:
 
                 switch (s.pseudoOp)
                 {
@@ -1176,26 +1176,24 @@ void AST::firstPassAssemble()
                             throw std::runtime_error(ss.str());
                         }
 
-                        int32_t orgAddress;
-
-                        if (! s.expression.evaluate(orgAddress, m_symbolTable))
+                        if (! s.expression.evaluate(m_orgAddress, m_symbolTable))
                         {
                             std::stringstream ss;
                             ss << ".org statement cannot be evaluated on line " << s.lineNum << std::endl;
                             throw std::runtime_error(ss.str());
                         }
 
-                        curAddress = (uint32_t)orgAddress;
+                        curAddress = (uint32_t)m_orgAddress;
 
                         break;
                     default:
 
-						if (isTimes)
-						{
-							s.timesStatement = timesStatement;
-						}
+                        if (isTimes)
+                        {
+                            s.timesStatement = timesStatement;
+                        }
 
-						s.firstPassAssemble(curAddress, m_symbolTable);
+                        s.firstPassAssemble(curAddress, m_symbolTable);
                 }
 
                 isTimes = false;
@@ -1204,14 +1202,14 @@ void AST::firstPassAssemble()
 
                 timesStatement = &s;
 
-				if (! s.expression.evaluate(s.expression.value, m_symbolTable))
-				{
-					std::stringstream ss;
-					ss << ".times statement cannot be evaluated on line " << s.lineNum << std::endl;
-					throw std::runtime_error(ss.str());
-				}
+                if (! s.expression.evaluate(s.expression.value, m_symbolTable))
+                {
+                    std::stringstream ss;
+                    ss << ".times statement cannot be evaluated on line " << s.lineNum << std::endl;
+                    throw std::runtime_error(ss.str());
+                }
 
-				isTimes = true;
+                isTimes = true;
 
                 break;
             default:
@@ -1223,72 +1221,111 @@ void AST::firstPassAssemble()
 void AST::resolveSymbols()
 {
 
-	// Iterate over all symbols and resolve their values
+    // Iterate over all symbols and resolve their values
 
-	// 1. get address of all labels
+    // 1. get address of all labels
 
-	for (Symbol* sym : m_symbolList)
-	{
-		Statement* statement = sym->definedIn;
+    for (Symbol* sym : m_symbolList)
+    {
+        Statement* statement = sym->definedIn;
 
-		if (statement->type == StatementType::LABEL)
-		{
-			sym->value = statement->address;
-			sym->evaluated = true;
-		}
-	}
+        if (statement->type == StatementType::LABEL)
+        {
+            sym->value = statement->address;
+            sym->evaluated = true;
+        }
+    }
 
-	for (Symbol* sym : m_symbolList)
-	{
-		if (! sym->evaluated)
-		{
-			Statement*  statement = sym->definedIn;
-			int32_t		value	  = 0;
+    for (Symbol* sym : m_symbolList)
+    {
+        if (! sym->evaluated)
+        {
+            Statement*  statement = sym->definedIn;
+            int32_t		value	  = 0;
 
-			if (! statement->expression.evaluate(value, m_symbolTable))
-			{
-				std::stringstream ss;
-				ss << "could not evaluate expression on line " << statement->lineNum << std::endl;
-				throw std::runtime_error(ss.str());
-			}
+            if (! statement->expression.evaluate(value, m_symbolTable))
+            {
+                std::stringstream ss;
+                ss << "could not evaluate expression on line " << statement->lineNum << std::endl;
+                throw std::runtime_error(ss.str());
+            }
 
-			sym->value = value;
-			sym->evaluated = true;
-		}
-	}
+            sym->value = value;
+            sym->evaluated = true;
+        }
+    }
 
 }
 
 void AST::evaluateExpressions()
 {
 
-	// At this point we should be able to evaluate all expressions.
+    // At this point we should be able to evaluate all expressions.
 
-	for (Statement& s : m_statements)
-	{
-		int32_t value = 0;
-		char* string = nullptr;
+    for (Statement& s : m_statements)
+    {
+        int32_t value = 0;
+        char* string = nullptr;
 
-		if (! (s.type == StatementType::OPCODE_WITH_EXPRESSION ||
-			   s.type == StatementType::ONE_REGISTER_OPCODE_AND_EXPRESSION ||
-			   s.type == StatementType::PSEUDO_OP_WITH_EXPRESSION))
-			continue;
+        if (! (s.type == StatementType::OPCODE_WITH_EXPRESSION ||
+               s.type == StatementType::ONE_REGISTER_OPCODE_AND_EXPRESSION ||
+               s.type == StatementType::PSEUDO_OP_WITH_EXPRESSION))
+            continue;
 
-		if (! s.expression.isStringLiteral(string) &&
-			! s.expression.evaluate(value, m_symbolTable))
-		{
-				std::stringstream ss;
-				ss << "could not evaluate expression on line " << s.lineNum << std::endl;
-				throw std::runtime_error(ss.str());
-		}
+        if (! s.expression.isStringLiteral(string) &&
+            ! s.expression.evaluate(value, m_symbolTable))
+        {
+                std::stringstream ss;
+                ss << "could not evaluate expression on line " << s.lineNum << std::endl;
+                throw std::runtime_error(ss.str());
+        }
 
-		s.expression.value = value;
-	}
+        s.expression.value = value;
+    }
 
 }
 
 void AST::assemble()
 {
+
+    uint32_t curAddress = 0;
+
+    for (Statement& s : m_statements)
+    {
+        switch (s.type)
+        {
+            case StatementType::ONE_REGISTER_OPCODE_AND_EXPRESSION:
+            case StatementType::OPCODE_WITH_EXPRESSION:
+            {
+                curAddress = s.address;
+                s.assemble(curAddress);
+
+                break;
+            }
+            case StatementType::TWO_REGISTER_OPCODE:
+            case StatementType::STANDALONE_OPCODE:
+                // These will already be assembled
+                break;
+            case StatementType::PSEUDO_OP_WITH_EXPRESSION:
+
+                switch (s.pseudoOp)
+                {
+                    case PseudoOp::DD:
+                    case PseudoOp::DW:
+                    {
+                        curAddress = s.address;
+                        s.assemble(curAddress);
+                        break;
+                    }
+                    default:
+                        break;
+                }
+
+                break;
+            default:
+                break;
+        }
+    }
 
 }
 
@@ -1300,16 +1337,19 @@ void AST::writeBinOutput(std::string path)
 void AST::printAssembly()
 {
 
-	for (Statement&s : m_statements)
-	{
-		std::cout << std::hex << std::setfill('0') << std::setw(6) << s.address << " : ";
+    for (Statement&s : m_statements)
+    {
+        if (s.assembledWords.size() == 0)
+            continue;
 
-		for (uint16_t w : s.assembledWords)
-		{
-			std::cout << std::setfill('0') << std::setw(4) << w << " ";
-		}
+        std::cout << std::hex << std::setfill('0') << std::setw(6) << s.address << " : ";
 
-		std::cout << std::endl;
-	}
+        for (uint16_t w : s.assembledWords)
+        {
+            std::cout << std::setfill('0') << std::setw(4) << w << " ";
+        }
+
+        std::cout << std::endl;
+    }
 
 }

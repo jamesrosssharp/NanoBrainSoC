@@ -11,7 +11,7 @@
   extern "C" int yyparse();
   extern "C" FILE *yyin;
   extern int line_num;
- 
+
   AST g_ast;
 
   void yyerror(const char *s);
@@ -57,10 +57,10 @@ asm: body_section footer { cout << "Parsed asm file" << endl; } ;
 
 op_code : op_code_1 | op_code_2 | op_code_3 | op_code_4;
 
-op_code_1: OPCODE REG COMMA REG ENDLS { g_ast.addTwoRegisterOpcode(line_num - 1, $1,$2,$4); } ;
-op_code_2 : OPCODE REG COMMA expressions ENDLS { g_ast.addOneRegisterAndExpressionOpcode(line_num - 1, $1, $2); } ;
-op_code_3 : OPCODE expressions ENDLS { g_ast.addExpressionOpcode(line_num - 1, $1); } ;
-op_code_4 : OPCODE ENDLS { g_ast.addStandaloneOpcode(line_num - 1, $1); } ;
+op_code_1: OPCODE REG COMMA REG ENDL { g_ast.addTwoRegisterOpcode(line_num - 1, $1,$2,$4); } ;
+op_code_2 : OPCODE REG COMMA expressions ENDL { g_ast.addOneRegisterAndExpressionOpcode(line_num - 1, $1, $2); } ;
+op_code_3 : OPCODE expressions ENDL { g_ast.addExpressionOpcode(line_num - 1, $1); } ;
+op_code_4 : OPCODE ENDL { g_ast.addStandaloneOpcode(line_num - 1, $1); } ;
 
 expressions: expressions expression | expression ;
 expression: hexval | integer | open_parenthesis | close_parenthesis | plus | minus|
@@ -85,7 +85,7 @@ shr :                   SHR                 { g_ast.addShiftRightToCurrentStatem
 hexval:                 HEXVAL              { g_ast.addUIntToCurrentStatementExpresion($1);}
 integer:                INT                 { g_ast.addIntToCurrentStatementExpression($1); }
 
-equ: STRING EQU expressions ENDLS {g_ast.addEqu(line_num - 1, $1); } ;
+equ: STRING EQU expressions ENDL {g_ast.addEqu(line_num - 1, $1); } ;
 
 times_line: times ;
 
@@ -93,14 +93,16 @@ times: TIMES expressions { g_ast.addTimes(line_num); } ;
 
 pseudoop_line: pseudoop ;
 
-pseudoop: PSEUDOOP expressions ENDLS { g_ast.addExpressionPseudoOp(line_num - 1, $1); } ;
+pseudoop: PSEUDOOP expressions ENDL { g_ast.addExpressionPseudoOp(line_num - 1, $1); } ;
 
-label: STRING LABEL ENDLS { g_ast.addLabel(line_num - 1, $1); } ;
+label: STRING LABEL ENDL { g_ast.addLabel(line_num - 1, $1); } ;
 
 body_section: body_lines ;
 body_lines: body_lines body_line | body_line ;
 
-body_line: op_code | times | pseudoop | label | equ ;
+body_line: op_code | times | pseudoop | label | equ | blank_line;
+
+blank_line: ENDLS;
 
 footer: END ENDLS;
 ENDLS: ENDLS ENDL | ENDL ;
@@ -119,38 +121,47 @@ int main(int, char**) {
   yyin = myfile;
 
   // parse through the input until there is no more:
-	
+
   do {
     yyparse();
   } while (!feof(yyin));
-	
+
   //cout << g_ast << endl;
 
   // build symbol table
+
+  cout << "Building symbol table..." << endl;
 
   g_ast.buildSymbolTable();
 
   // first pass assemble
 
-  g_ast.firstPassAssemble();
+  cout << "First pass assembly..." << endl;
 
-  g_ast.printAssembly();
+  g_ast.firstPassAssemble();
 
   // resolve symbols
 
+  cout << "Resolving symbols..." << endl;
+
   g_ast.resolveSymbols();
 
-  g_ast.printSymbolTable();
-
   // evaluate expressions
+
+  cout << "Evaluating expressions..." << endl;
 
   g_ast.evaluateExpressions();
 
   // generate assembly
 
+  cout << "Assembling..." << endl;
+
   g_ast.assemble();
 
   g_ast.printAssembly();
+
+  // TODO: relaxation to remove unnecessary NOPs introduced when assembling
+  // after symbols are known - how to do this?
 
 
   // output binary file

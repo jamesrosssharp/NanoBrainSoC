@@ -1,11 +1,11 @@
-		.org 0h
+        .org 0h
 
 CHAR_H  equ  'H' // 0x0048
 CHAR_E  equ  'e' // 0x0065
 CHAR_L  equ CHAR_E + 7
 CHAR_O  equ  'o' // 0x006f
 
-        // set up a stack 
+        // set up a stack
 
         load r0, (StackEnd & 0x0000ffff)
         load r1, (StackEnd & 0xffff0000) >> 16
@@ -37,8 +37,8 @@ start:
 
         out r4,  r0     // 'r'
         load r1, 0x006c // 'l'
-		load r2, 0x0064 // 'd'
-		load r3, 0x0021 // '!'
+        load r2, 0x0064 // 'd'
+        load r3, 0x0021 // '!'
         out r1, r0 // 'l'
         out r2, r0 // 'd'
         out r3, r0 // '!'
@@ -58,7 +58,7 @@ start:
         jump start
 
 WaitTXEmpty:
-        
+
 
         ret
 
