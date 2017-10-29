@@ -1262,6 +1262,29 @@ void AST::resolveSymbols()
 void AST::evaluateExpressions()
 {
 
+	// At this point we should be able to evaluate all expressions.
+
+	for (Statement& s : m_statements)
+	{
+		int32_t value = 0;
+		char* string = nullptr;
+
+		if (! (s.type == StatementType::OPCODE_WITH_EXPRESSION ||
+			   s.type == StatementType::ONE_REGISTER_OPCODE_AND_EXPRESSION ||
+			   s.type == StatementType::PSEUDO_OP_WITH_EXPRESSION))
+			continue;
+
+		if (! s.expression.isStringLiteral(string) &&
+			! s.expression.evaluate(value, m_symbolTable))
+		{
+				std::stringstream ss;
+				ss << "could not evaluate expression on line " << s.lineNum << std::endl;
+				throw std::runtime_error(ss.str());
+		}
+
+		s.expression.value = value;
+	}
+
 }
 
 void AST::assemble()

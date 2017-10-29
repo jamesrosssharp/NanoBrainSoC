@@ -16,8 +16,8 @@ bool Expression::evaluate(int32_t &value, SymbolTable &syms)
     //
     // - scan for sub-expressions and recursively evaluate
 
-    Expression e, sube;
-    uint32_t            stackDepth = 0;
+	Expression  e, sube;
+	uint32_t    stackDepth = 0;
     Expression* curExp = &e;
 
     e.lineNum = lineNum;
@@ -25,7 +25,7 @@ bool Expression::evaluate(int32_t &value, SymbolTable &syms)
     for (ExpressionElement& elem : elements)
     {
 
-        switch (elem.elem)
+		switch (elem.elem)
         {
             case ExpressionElementType::kLeftParenthesis:
                 if (stackDepth == 0)
@@ -63,7 +63,7 @@ bool Expression::evaluate(int32_t &value, SymbolTable &syms)
                         ExpressionElement subElem;
                         subElem.elem = ExpressionElementType::kInt;
                         subElem.v.sval = subValue;
-                        e.addElement(subElem);
+						e.addElement(subElem);
                     }
                 }
                 else
@@ -97,7 +97,7 @@ bool Expression::evaluate(int32_t &value, SymbolTable &syms)
                 ExpressionElement symElem;
                 symElem.elem = ExpressionElementType::kInt;
                 symElem.v.sval = sym->value;
-                e.addElement(symElem);
+				curExp->addElement(symElem);
 
                 break;
             }
@@ -112,7 +112,6 @@ bool Expression::evaluate(int32_t &value, SymbolTable &syms)
     // - recursively reduce expression (TODO: operator precedence?)
 
         // unary plus / minus, not
-
 
         // mult, div
 
@@ -164,7 +163,6 @@ bool Expression::evaluate(int32_t &value, SymbolTable &syms)
 		}
     }
 
-
     return true;
 }
 
@@ -204,6 +202,13 @@ Expression Expression::doOp(ExpressionElementType type, std::function<int32_t (i
             }
 
             int32_t lval, rval;
+
+			if (left == nullptr)
+			{
+				std::stringstream ss;
+				ss << "binary operator " << (uint32_t)type << " without left operand on line " << lineNum << std::endl;
+				throw std::runtime_error(ss.str());
+			}
 
             switch (left->elem)
             {
