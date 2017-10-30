@@ -1,13 +1,13 @@
 
-all: TestAsm
+all: nbasm
 
-TestAsm:	TestAsm.tab.c lex.yy.c AST.cpp AST.h Expression.h Expression.cpp Statement.cpp Statement.h Symbol.h types.h Assembly.h Assembly.cpp
-	g++ TestAsm.tab.c lex.yy.c AST.cpp Expression.cpp Statement.cpp Assembly.cpp -std=c++11 -lfl -o TestAsm
+nbasm:	nbasm.tab.c lex.yy.c AST.cpp AST.h Expression.h Expression.cpp Statement.cpp Statement.h Symbol.h types.h Assembly.h Assembly.cpp
+	g++ nbasm.tab.c lex.yy.c AST.cpp Expression.cpp Statement.cpp Assembly.cpp -std=c++11 -lfl -o nbasm
 
-TestAsm.tab.c: TestAsm.y
-	bison -d TestAsm.y
+nbasm.tab.c: nbasm.y
+	bison -d nbasm.y
 
-lex.yy.c: TestAsm.l
-	flex TestAsm.l
+lex.yy.c: nbasm.lex
+	flex nbasm.lex
 
 
