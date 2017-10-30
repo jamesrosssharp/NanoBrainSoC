@@ -38,14 +38,14 @@ struct ExpressionElement
         float   fval;
     } v;
 
-	int32_t charLiteralValue()
-	{
-		if (elem == ExpressionElementType::kCharLiteral)
-		{
-			return (int32_t)v.string[0];
-		}
-		throw std::runtime_error("Not a char literal!");
-	}
+    int32_t charLiteralValue()
+    {
+        if (elem == ExpressionElementType::kCharLiteral)
+        {
+            return (int32_t)v.string[0];
+        }
+        throw std::runtime_error("Not a char literal!");
+    }
 
 };
 
@@ -62,17 +62,20 @@ struct Expression
     {
         elements.clear();
         lineNum = 0;
-		value = 0;
-	}
+        value = 0;
+    }
 
     uint32_t lineNum;
 
-	int32_t value;
+    int32_t value;
 
     bool evaluate(int32_t& value, SymbolTable& syms);
-	bool isStringLiteral(char*& stringLit);
+    bool isStringLiteral(char*& stringLit);
 
     Expression doOp(ExpressionElementType type, std::function<int32_t (int32_t left, int32_t right)> func);
+
+    static char* substituteSpecialChars(char* stringLit);
+    static uint32_t stringLength(char* stringLit);
 
 };
 

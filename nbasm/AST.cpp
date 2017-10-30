@@ -7,6 +7,7 @@
 #include <utility>
 #include <cstdint>
 #include <iomanip>
+#include <fstream>
 
 #include "AST.h"
 
@@ -1331,6 +1332,28 @@ void AST::assemble()
 
 void AST::writeBinOutput(std::string path)
 {
+    uint32_t maxAddress = m_orgAddress;
+
+    for (Statement& s : m_statements)
+        if (s.address > m_orgAddress)
+            maxAddress = s.address;
+
+    std::vector<uint16_t> assembly;
+
+    assembly.resize((maxAddress - m_orgAddress) / sizeof(uint16_t));
+
+    for (Statement& s : m_statements)
+        for (int i = 0; i < s.assembledWords.size(); i++)
+            assembly[(s.address - m_orgAddress) / sizeof(uint16_t) + i] = s.assembledWords[i];
+
+
+    std::ofstream out;
+
+    out.open(path.c_str(), std::ios_base::out | std::ios_base::binary);
+
+    for (uint16_t word : assembly)
+        out.write((char*)&word, sizeof(uint16_t));
+
 
 }
 

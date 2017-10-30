@@ -193,7 +193,7 @@ void Statement::firstPassAssemble(uint32_t& curAddress, SymbolTable& syms)
 
                     if (expression.isStringLiteral(stringLit))
                     {
-                        assembledWords.resize(repetitionCount * strlen(stringLit));
+                        assembledWords.resize(repetitionCount * Expression::stringLength(stringLit));
                     }
                     else
                     {
@@ -203,7 +203,7 @@ void Statement::firstPassAssemble(uint32_t& curAddress, SymbolTable& syms)
                 case PseudoOp::DD:
                     if (expression.isStringLiteral(stringLit))
                     {
-                        assembledWords.resize(2 * repetitionCount * strlen(stringLit));
+                        assembledWords.resize(2 * repetitionCount * Expression::stringLength(stringLit));
                     }
                     else
                     {
@@ -232,6 +232,10 @@ void Statement::assemble(uint32_t &curAddress)
         repetitionCount = timesStatement->expression.value;
     }
 
+    std::vector<uint16_t> words;
+
+    words.resize(assembledWords.size() / repetitionCount);
+
     switch (type)
     {
         case StatementType::STANDALONE_OPCODE:
@@ -240,26 +244,26 @@ void Statement::assemble(uint32_t &curAddress)
             {
                 case OpCode::RET:
                 {
-                    assembledWords.resize(1);
-                    assembledWords[0] =  0b1011111000000000;
+                    words.resize(1);
+                    words[0] =  0b1011111000000000;
                     break;
                 }
                 case OpCode::RETI:
                 {
-                    assembledWords.resize(1);
-                    assembledWords[0] =  0b1011111000000001;
+                    words.resize(1);
+                    words[0] =  0b1011111000000001;
                     break;
                 }
                 case OpCode::NOP:
                 {
-                    assembledWords.resize(1);
-                    assembledWords[0] =  0b0100011100000000;
+                    words.resize(1);
+                    words[0] =  0b0100011100000000;
                     break;
                 }
                 case OpCode::SLEEP:
                 {
-                    assembledWords.resize(1);
-                    assembledWords[0] =  0b0100111100000000;
+                    words.resize(1);
+                    words[0] =  0b0100111100000000;
                     break;
                 }
                 default:
@@ -304,8 +308,8 @@ void Statement::assemble(uint32_t &curAddress)
                     op |= ((uint32_t)regDest) << 4;
                     op |= ((uint32_t)regSrc);
 
-                    assembledWords.resize(1);
-                    assembledWords[0] = op;
+                    words.resize(1);
+                    words[0] = op;
 
                     break;
                 }
@@ -363,8 +367,8 @@ void Statement::assemble(uint32_t &curAddress)
                     op |= ((uint16_t)regDest - 16) << 4;
                     op |= (uint16_t)regSrc & 0xe;
 
-                    assembledWords.resize(1);
-                    assembledWords[0] = op;
+                    words.resize(1);
+                    words[0] = op;
 
                     break;
                 }
@@ -377,8 +381,8 @@ void Statement::assemble(uint32_t &curAddress)
                     op |= ((uint16_t)regDest) << 4;
                     op |= ((uint16_t)regSrc);
 
-                    assembledWords.resize(1);
-                    assembledWords[0] = op;
+                    words.resize(1);
+                    words[0] = op;
 
                     break;
                 }
@@ -393,52 +397,52 @@ void Statement::assemble(uint32_t &curAddress)
             switch (opcode)
             {
                 case OpCode::ADD:
-                    Assembly::makeArithmeticInstructionWithImmediate(0b0110000000000000, regDest, expression.value, assembledWords, lineNum);
+                    Assembly::makeArithmeticInstructionWithImmediate(0b0110000000000000, regDest, expression.value, words, lineNum);
                     break;
                 case OpCode::ADC:
-                    Assembly::makeArithmeticInstructionWithImmediate(0b0111000000000000, regDest, expression.value, assembledWords, lineNum);
+                    Assembly::makeArithmeticInstructionWithImmediate(0b0111000000000000, regDest, expression.value, words, lineNum);
                     break;
                 case OpCode::SUB:
-                    Assembly::makeArithmeticInstructionWithImmediate(0b0110100000000000, regDest, expression.value, assembledWords, lineNum);
+                    Assembly::makeArithmeticInstructionWithImmediate(0b0110100000000000, regDest, expression.value, words, lineNum);
                     break;
                 case OpCode::SBB:
-                    Assembly::makeArithmeticInstructionWithImmediate(0b0111100000000000, regDest, expression.value, assembledWords, lineNum);
+                    Assembly::makeArithmeticInstructionWithImmediate(0b0111100000000000, regDest, expression.value, words, lineNum);
                     break;
                 case OpCode::AND:
-                    Assembly::makeArithmeticInstructionWithImmediate(0b0110010000000000, regDest, expression.value, assembledWords, lineNum);
+                    Assembly::makeArithmeticInstructionWithImmediate(0b0110010000000000, regDest, expression.value, words, lineNum);
                     break;
                 case OpCode::OR:
-                    Assembly::makeArithmeticInstructionWithImmediate(0b0111010000000000, regDest, expression.value, assembledWords, lineNum);
+                    Assembly::makeArithmeticInstructionWithImmediate(0b0111010000000000, regDest, expression.value, words, lineNum);
                     break;
                 case OpCode::XOR:
-                    Assembly::makeArithmeticInstructionWithImmediate(0b0110110000000000, regDest, expression.value, assembledWords, lineNum);
+                    Assembly::makeArithmeticInstructionWithImmediate(0b0110110000000000, regDest, expression.value, words, lineNum);
                     break;
                 case OpCode::CMP:
-                    Assembly::makeArithmeticInstructionWithImmediate(0b0110001000000000, regDest, expression.value, assembledWords, lineNum);
+                    Assembly::makeArithmeticInstructionWithImmediate(0b0110001000000000, regDest, expression.value, words, lineNum);
                     break;
                 case OpCode::TEST:
-                    Assembly::makeArithmeticInstructionWithImmediate(0b0111001000000000, regDest, expression.value, assembledWords, lineNum);
+                    Assembly::makeArithmeticInstructionWithImmediate(0b0111001000000000, regDest, expression.value, words, lineNum);
                     break;
                 case OpCode::LOAD:
-                    Assembly::makeArithmeticInstructionWithImmediate(0b0110101000000000, regDest, expression.value, assembledWords, lineNum);
+                    Assembly::makeArithmeticInstructionWithImmediate(0b0110101000000000, regDest, expression.value, words, lineNum);
                     break;
                 case OpCode::MUL:
-                    Assembly::makeArithmeticInstructionWithImmediate(0b0110011000000000, regDest, expression.value, assembledWords, lineNum);
+                    Assembly::makeArithmeticInstructionWithImmediate(0b0110011000000000, regDest, expression.value, words, lineNum);
                     break;
                 case OpCode::MULS:
-                    Assembly::makeArithmeticInstructionWithImmediate(0b0111011000000000, regDest, expression.value, assembledWords, lineNum);
+                    Assembly::makeArithmeticInstructionWithImmediate(0b0111011000000000, regDest, expression.value, words, lineNum);
                     break;
                 case OpCode::DIV:
-                    Assembly::makeArithmeticInstructionWithImmediate(0b0110111000000000, regDest, expression.value, assembledWords, lineNum);
+                    Assembly::makeArithmeticInstructionWithImmediate(0b0110111000000000, regDest, expression.value, words, lineNum);
                     break;
                 case OpCode::DIVS:
-                    Assembly::makeArithmeticInstructionWithImmediate(0b0111111000000000, regDest, expression.value, assembledWords, lineNum);
+                    Assembly::makeArithmeticInstructionWithImmediate(0b0111111000000000, regDest, expression.value, words, lineNum);
                     break;
                 case OpCode::BSL:
-                    Assembly::makeArithmeticInstructionWithImmediate(0b0100000100000000, regDest, expression.value, assembledWords, lineNum);
+                    Assembly::makeArithmeticInstructionWithImmediate(0b0100000100000000, regDest, expression.value, words, lineNum);
                     break;
                 case OpCode::BSR:
-                    Assembly::makeArithmeticInstructionWithImmediate(0b0110000100000000, regDest, expression.value, assembledWords, lineNum);
+                    Assembly::makeArithmeticInstructionWithImmediate(0b0110000100000000, regDest, expression.value, words, lineNum);
                     break;
                 default:
                 {
@@ -467,7 +471,7 @@ void Statement::assemble(uint32_t &curAddress)
                 case OpCode::CALLC:
                 case OpCode::CALLNZ:
                 case OpCode::CALLNC:
-                    Assembly::makeFlowControlInstruction(opcode, address, expression.value, lineNum, assembledWords);
+                    Assembly::makeFlowControlInstruction(opcode, address, expression.value, lineNum, words);
                     break;
                 default:
                 {
@@ -483,7 +487,43 @@ void Statement::assemble(uint32_t &curAddress)
         }
         case StatementType::PSEUDO_OP_WITH_EXPRESSION:
         {
+            switch (pseudoOp)
+            {
+                case PseudoOp::DW:
+                {
+                    // If the expression is a string literal, repeat the string literal repetition count number of times.
 
+                    char* stringLit;
+
+                    if (expression.isStringLiteral(stringLit))
+                    {
+                        char* substitutedString = Expression::substituteSpecialChars(stringLit);
+
+                        uint32_t len = Expression::stringLength(substitutedString);
+
+                        words.resize(len);
+
+                        for (uint32_t i = 0; i < len; i++)
+                        {
+                            words[i] = (uint16_t)substitutedString[i];
+                        }
+
+                        delete [] substitutedString;
+                    }
+                    else
+                    {
+                        words.resize(1);
+                        words[0] = expression.value;
+                    }
+
+                    break;
+                }
+                case PseudoOp::DD:
+                {
+
+                    break;
+                }
+            }
 
             break;
         }
@@ -491,9 +531,19 @@ void Statement::assemble(uint32_t &curAddress)
             break;
     }
 
+    // handle repetition count by repeating assembled bytes repetition count number of times.
+
+    if (assembledWords.size() != words.size() * repetitionCount)
+        assembledWords.resize(words.size() * repetitionCount);
+
+    for (int i = 0; i < repetitionCount; i++)
+        for (int j = 0; j < words.size(); j++)
+        {
+            assembledWords[i*words.size() + j] = words[j];
+        }
+
+
     curAddress += assembledWords.size() * 2;
-
-
 
 }
 

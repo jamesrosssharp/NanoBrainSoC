@@ -3,6 +3,10 @@
 #include <sstream>
 #include <iostream>
 
+#include <string.h>
+
+const int kMaxStringLength = 1024;
+
 bool Expression::evaluate(int32_t &value, SymbolTable &syms)
 {
 
@@ -289,4 +293,54 @@ bool Expression::isStringLiteral(char*& stringLit)
         return true;
     }
     return false;
+}
+
+char* Expression::substituteSpecialChars(char* stringLit)
+{
+    char* newString = new char[::strlen(stringLit)];
+
+    uint32_t pos = 0;
+    uint32_t newPos = 0;
+
+    while (pos < kMaxStringLength)
+    {
+        if (stringLit[pos] == '\0')
+        {
+            break;
+        }
+
+        if (stringLit[pos] == '\\')
+        {
+            pos++;
+            switch (stringLit[pos])
+            {
+                case 'n':
+                    newString[newPos++] = '\n';
+                    break;
+                case 'r':
+                    newString[newPos++] = '\r';
+                    break;
+                case '0':
+                    newString[newPos++] = '\0';
+                    break;
+            }
+        }
+        else
+        {
+            newString[newPos++] = stringLit[pos];
+        }
+        pos++;
+    }
+
+    newString[newPos] = '\0';
+
+    return newString;
+}
+
+uint32_t Expression::stringLength(char* stringLit)
+{
+    char* newString = substituteSpecialChars(stringLit);
+    uint32_t len = strlen(newString);
+    delete [] newString;
+    return len;
 }
