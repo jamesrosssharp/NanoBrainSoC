@@ -10,4 +10,5 @@ nbasm.tab.c: nbasm.y
 lex.yy.c: nbasm.lex
 	flex nbasm.lex
 
-
+install: nbasm
+	cp nbasm ../bin

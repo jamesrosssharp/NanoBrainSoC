@@ -2,7 +2,8 @@
 #include <cstdio>
 #include <iostream>
 #include "AST.h"
-
+#include <unistd.h>
+#include <string.h>
 
   using namespace std;
 
@@ -108,70 +109,108 @@ footer: END ENDLS;
 ENDLS: ENDLS ENDL | ENDL ;
 %%
 
-int main(int, char**) {
+void printUsage(char *arg0)
+{
+    std::cout << "Usage: " << arg0 << " [-t <bin|elf>] [-o <output.o>] <file.asm>" << std::endl;
+    std::cout << std::endl;
+    std::cout << "      options: " << std::endl;
+    std::cout << "          -t: type (bin / elf) " << std::endl;
 
-  // open a file handle to a particular file:
-  FILE *myfile = fopen("Test.asm", "r");
-  // make sure it's valid:
-  if (!myfile) {
+}
+
+int main(int argc, char** argv) {
+
+    if (argc == 1)
+    {
+        printUsage(argv[0]);
+        exit(EXIT_FAILURE);
+    }
+
+    char *outputFile = nullptr;
+    char *type = nullptr;
+    char c;
+
+    while ((c = getopt (argc, argv, "to:")) != -1)
+    switch (c)
+    {
+        case 't':
+            type = strdup(optarg);
+            break;
+        case 'o':
+            outputFile = strdup(optarg);
+            break;
+        default:
+            printUsage(argv[0]);
+            exit(EXIT_FAILURE);
+    }
+
+    if (optind == argc)
+    {
+        std::cout << "ERROR: no input files" << std::endl;
+    }
+
+    // open a file handle to a particular file:
+    FILE *myfile = fopen(argv[optind], "r");
+    // make sure it's valid:
+    if (!myfile) {
     cout << "I can't open Test.asm file!" << endl;
     return -1;
-  }
-  // set lex to read from it instead of defaulting to STDIN:
-  yyin = myfile;
+    }
+    // set lex to read from it instead of defaulting to STDIN:
+    yyin = myfile;
 
-  // parse through the input until there is no more:
+    // parse through the input until there is no more:
 
-  do {
+    do {
     yyparse();
-  } while (!feof(yyin));
+    } while (!feof(yyin));
 
-  //cout << g_ast << endl;
+    //cout << g_ast << endl;
 
-  // build symbol table
+    // build symbol table
 
-  cout << "Building symbol table..." << endl;
+    cout << "Building symbol table..." << endl;
 
-  g_ast.buildSymbolTable();
+    g_ast.buildSymbolTable();
 
-  // first pass assemble
+    // first pass assemble
 
-  cout << "First pass assembly..." << endl;
+    cout << "First pass assembly..." << endl;
 
-  g_ast.firstPassAssemble();
+    g_ast.firstPassAssemble();
 
-  // resolve symbols
+    // resolve symbols
 
-  cout << "Resolving symbols..." << endl;
+    cout << "Resolving symbols..." << endl;
 
-  g_ast.resolveSymbols();
+    g_ast.resolveSymbols();
 
-  // evaluate expressions
+    // evaluate expressions
 
-  cout << "Evaluating expressions..." << endl;
+    cout << "Evaluating expressions..." << endl;
 
-  g_ast.evaluateExpressions();
+    g_ast.evaluateExpressions();
 
-  // generate assembly
+    // generate assembly
 
-  cout << "Assembling..." << endl;
+    cout << "Assembling..." << endl;
 
-  g_ast.assemble();
+    g_ast.assemble();
 
-  g_ast.printAssembly();
+    g_ast.printAssembly();
 
-  // TODO: relaxation to remove unnecessary NOPs introduced when assembling
-  // after symbols are known - how to do this?
+    // TODO: relaxation to remove unnecessary NOPs introduced when assembling
+    // after symbols are known - how to do this?
 
 
-  // output binary file
+    // output binary file
 
-  g_ast.writeBinOutput("Test.bin");
+    g_ast.writeBinOutput(outputFile == nullptr ? "out.bin" : outputFile);
 
 }
 
 void yyerror(const char *s) {
-  cout << "Parse error on line " << line_num << ": " << s << endl;
-  // might as well halt now:
-  exit(-1);
+    cout << "Parse error on line " << line_num << ": " << s << endl;
+    // might as well halt now:
+    exit(-1);
 }
