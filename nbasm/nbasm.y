@@ -130,7 +130,7 @@ int main(int argc, char** argv) {
     char *type = nullptr;
     char c;
 
-    while ((c = getopt (argc, argv, "to:")) != -1)
+    while ((c = getopt (argc, argv, "t:o:")) != -1)
     switch (c)
     {
         case 't':
