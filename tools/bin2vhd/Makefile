@@ -6,3 +6,6 @@ bin2vhd: main.cpp
 
 run: bin2vhd
 	./bin2vhd -t AlteraRomTemplate.vhd -o ROM.vhd ../../nbasm/Test.bin
+
+install: bin2vhd 
+	cp bin2vhd ../../bin

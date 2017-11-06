@@ -32,10 +32,13 @@ public:
     void addUIntToCurrentStatementExpresion(unsigned int val);
     void addStringToCurrentStatementExpression(char* string);
 
-    void addTwoRegisterOpcode(int linenum, char* opcode, char* regSrc, char* regDest);
-    void addOneRegisterAndExpressionOpcode(int linenum, char* opcode, char* regSrc);
+    void addTwoRegisterOpcode(int linenum, char* opcode, char* regDest, char* regSrc);
+    void addOneRegisterAndExpressionOpcode(int linenum, char* opcode, char* regDest);
     void addExpressionOpcode(int linenum, char* opcode);
     void addStandaloneOpcode(int linenum, char* opcode);
+    void addIndirectAddressingOpcode(int linenum, char* opcode, char* regDest, char* regIdx, char* regOffset);
+    void addIndirectAddressingOpcodeWithExpression(int linenum, char* opcode, char* regDest, char* regIdx);
+    void addOneRegisterOpcode(int linenum, char* opcode, char* regDest);
 
     void addExpressionPseudoOp(int linenum, char* pseudoOp);
 

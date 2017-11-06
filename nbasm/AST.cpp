@@ -186,6 +186,41 @@ void AST::addExpressionPseudoOp(int linenum, char* pseudoOp)
     m_currentStatement.reset();
 }
 
+void AST::addIndirectAddressingOpcode(int linenum, char* opcode, char* regDest, char* regIdx, char* regOffset)
+{
+    m_currentStatement.lineNum = linenum;
+    m_currentStatement.opcode = convertOpCode(opcode);
+    m_currentStatement.type = StatementType::INDIRECT_ADDRESSING_OPCODE;
+    m_currentStatement.regDest = convertReg(regDest);
+    m_currentStatement.regInd = convertReg(regIdx);
+    m_currentStatement.regOffset = convertReg(regOffset);
+    m_statements.push_back(m_currentStatement);
+    m_currentStatement.reset();
+}
+
+void AST::addIndirectAddressingOpcodeWithExpression(int linenum, char* opcode, char* regDest, char* regIdx)
+{
+    m_currentStatement.lineNum = linenum;
+    m_currentStatement.opcode = convertOpCode(opcode);
+    m_currentStatement.type = StatementType::INDIRECT_ADDRESSING_OPCODE_WITH_EXPRESSION;
+    m_currentStatement.regDest = convertReg(regDest);
+    m_currentStatement.regInd = convertReg(regIdx);
+    m_currentStatement.expression.lineNum = linenum;
+    m_statements.push_back(m_currentStatement);
+    m_currentStatement.reset();
+}
+
+void AST::addOneRegisterOpcode(int linenum, char* opcode, char* regDest)
+{
+    m_currentStatement.lineNum = linenum;
+    m_currentStatement.opcode = convertOpCode(opcode);
+    m_currentStatement.regDest = convertReg(regDest);
+    m_currentStatement.type = StatementType::ONE_REGISTER_OPCODE;
+    m_currentStatement.expression.lineNum = linenum;
+    m_statements.push_back(m_currentStatement);
+    m_currentStatement.reset();
+}
+
 void AST::addLabel(int linenum, char* label)
 {
     m_currentStatement.lineNum = linenum;
@@ -444,6 +479,14 @@ OpCode AST::convertOpCode(char* opcode)
     {
         return OpCode::IN;
     }
+    else if (s == "INCW")
+    {
+        return OpCode::INCW;
+    }
+    else if (s == "DECW")
+    {
+        return OpCode::DECW;
+    }
 
     return OpCode::None;
 
@@ -636,6 +679,15 @@ std::ostream& operator << (std::ostream& os, const Statement& s)
         break;
         case StatementType::TWO_REGISTER_OPCODE:
             os << s.opcode << " " << s.regDest << " " << s.regSrc << std::endl;
+        break;
+        case StatementType::ONE_REGISTER_OPCODE:
+           os << s.opcode << " " << s.regDest << std::endl;
+        break;
+        case StatementType::INDIRECT_ADDRESSING_OPCODE:
+           os << s.opcode << " " << s.regDest << " " << s.regInd << " " << s.regOffset << std::endl;
+        break;
+        case StatementType::INDIRECT_ADDRESSING_OPCODE_WITH_EXPRESSION:
+          os << s.opcode << " " << s.regDest << " " << s.regInd << " " << s.expression << std::endl;
         break;
         case StatementType::OPCODE_WITH_EXPRESSION:
             os << s.opcode << " " << s.expression << std::endl;
@@ -1119,17 +1171,8 @@ void AST::firstPassAssemble()
                 isTimes = false;
                 break;
             case StatementType::ONE_REGISTER_OPCODE_AND_EXPRESSION:
-                assemblyStarted = true;
-
-                if (isTimes)
-                {
-                    s.timesStatement = timesStatement;
-                }
-
-                s.firstPassAssemble(curAddress, m_symbolTable);
-                isTimes = false;
-                break;
             case StatementType::OPCODE_WITH_EXPRESSION:
+            case StatementType::INDIRECT_ADDRESSING_OPCODE_WITH_EXPRESSION:
                 assemblyStarted = true;
 
                 if (isTimes)
@@ -1140,8 +1183,10 @@ void AST::firstPassAssemble()
                 s.firstPassAssemble(curAddress, m_symbolTable);
                 isTimes = false;
                 break;
+            case StatementType::ONE_REGISTER_OPCODE:
             case StatementType::TWO_REGISTER_OPCODE:
             case StatementType::STANDALONE_OPCODE:
+            case StatementType::INDIRECT_ADDRESSING_OPCODE:
                 assemblyStarted = true;
                 // we can directly assemble the instruction.
 
@@ -1297,12 +1342,15 @@ void AST::assemble()
         {
             case StatementType::ONE_REGISTER_OPCODE_AND_EXPRESSION:
             case StatementType::OPCODE_WITH_EXPRESSION:
+            case StatementType::INDIRECT_ADDRESSING_OPCODE_WITH_EXPRESSION:
             {
                 curAddress = s.address;
                 s.assemble(curAddress);
 
                 break;
             }
+            case StatementType::ONE_REGISTER_OPCODE:
+            case StatementType::INDIRECT_ADDRESSING_OPCODE:
             case StatementType::TWO_REGISTER_OPCODE:
             case StatementType::STANDALONE_OPCODE:
                 // These will already be assembled

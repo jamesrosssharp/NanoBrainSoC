@@ -49,6 +49,35 @@ void Assembly::makeArithmeticInstructionWithImmediate(uint16_t opcode, Register 
 
 }
 
+
+void Assembly::makeArithmeticInstruction(uint16_t opcode,
+                                         Register regDest,
+                                         Register regSrc, std::vector<uint16_t>& assembledWords,
+                                         uint32_t lineNum)
+{
+
+    uint16_t op = opcode;
+
+    if ((uint32_t)regDest >= 16)
+    {
+        std::stringstream ss;
+        ss << "Error: illegal destination register on line " << lineNum << std::endl;
+        throw std::runtime_error(ss.str());
+    }
+
+    if ((uint32_t)regSrc >= 16)
+    {
+        std::stringstream ss;
+        ss << "Error: illegal source register on line " << lineNum << std::endl;
+        throw std::runtime_error(ss.str());
+    }
+
+    op = op | ((uint16_t)regDest << 4) | ((uint16_t)regSrc);
+    assembledWords[0] = op;
+
+}
+
+
 void Assembly::makeFlowControlInstruction(OpCode opcode, uint32_t address, uint32_t target, uint32_t lineNum,
                                        std::vector<uint16_t>& assembledWords)
 {
@@ -173,5 +202,66 @@ void Assembly::makeFlowControlInstruction(OpCode opcode, uint32_t address, uint3
 
     }
 
+
+}
+
+void Assembly::makeLoadStoreWithExpression(OpCode opcode, uint32_t lineNum, std::vector<uint16_t>& assembledWords, int32_t value,
+                                           Register regInd, Register regDest)
+{
+
+    uint16_t op;
+
+    int16_t idx = (int16_t)regInd - 24;
+
+    if (idx < 0 || idx > 4)
+    {
+        std::stringstream ss;
+        ss << "Error: illegal index register on line " << lineNum << std::endl;
+        throw std::runtime_error(ss.str());
+    }
+
+    if ((uint16_t)regDest >= 16)
+    {
+        std::stringstream ss;
+        ss << "Error: illegal destination/source register on line " << lineNum << std::endl;
+        throw std::runtime_error(ss.str());
+    }
+
+    bool fitsIn4Bits = false;
+
+    if (value >= 0 && value < 16)
+        fitsIn4Bits = true;
+
+    switch (opcode)
+    {
+        case OpCode::LDW:
+            op = LDW_IMM_INSTRUCTION;
+            break;
+        case OpCode::STW:
+            op = STW_IMM_INSTRUCTION;
+            break;
+        default:
+        {
+            std::stringstream ss;
+            ss << "Error: opcode cannot take indirect addressing on line " << lineNum << std::endl;
+            throw std::runtime_error(ss.str());
+
+            break;
+        }
+    }
+
+    op |= ((uint16_t)regInd & 0x03) << 8;
+    op |= ((uint16_t)regDest & 0x0f) << 4;
+
+    if (fitsIn4Bits)
+    {
+        assembledWords[0] = op | (((uint16_t)value & 0x0f) >> 1);
+        assembledWords[1] = NOP_INSTRUCTION;
+    }
+    else
+    {
+        assembledWords[0] = IMM_INSTRUCTION | (((uint16_t)value & 0xfff0) >> 4);
+        assembledWords[1] = op | ((uint16_t)value & 0x0f);
+    }
 
 }

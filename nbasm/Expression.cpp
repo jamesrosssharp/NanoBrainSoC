@@ -151,7 +151,7 @@ bool Expression::evaluate(int32_t &value, SymbolTable &syms)
                e.elements[0].elem == ExpressionElementType::kCharLiteral))
     {
         std::stringstream ss;
-        ss << "Expression couldn't be reduced on line " << lineNum << " " << e.elements.size() << std::endl;
+        ss << "Expression couldn't be reduced on line " << lineNum << " " << e.elements.size() << " " << e << std::endl;
         throw std::runtime_error(ss.str());
     }
     else

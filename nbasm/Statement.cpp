@@ -2,9 +2,11 @@
 
 #include "Expression.h"
 #include "Assembly.h"
+#include "AST.h"
 
 #include <string.h>
 #include <sstream>
+#include <iostream>
 
 void Statement::reset()
 {
@@ -38,6 +40,8 @@ void Statement::firstPassAssemble(uint32_t& curAddress, SymbolTable& syms)
     {
         case StatementType::STANDALONE_OPCODE:
         case StatementType::TWO_REGISTER_OPCODE:
+        case StatementType::ONE_REGISTER_OPCODE:
+        case StatementType::INDIRECT_ADDRESSING_OPCODE:
         {
             // shouldn't get here - this should be assembled directly
 
@@ -139,6 +143,41 @@ void Statement::firstPassAssemble(uint32_t& curAddress, SymbolTable& syms)
                 {
                     std::stringstream ss;
                     ss << "Error: opcode cannot take expression on line " << lineNum << std::endl;
+                    throw std::runtime_error(ss.str());
+                }
+            }
+
+            break;
+        }
+        case StatementType::INDIRECT_ADDRESSING_OPCODE_WITH_EXPRESSION:
+        {
+
+            bool expressionCanFitIn4Bits = false;
+
+            int32_t exprValue = 0;
+
+            if (expression.evaluate(exprValue, syms))
+            {
+                if (exprValue >= 0 && exprValue < 16)
+                    expressionCanFitIn4Bits = true;
+            }
+
+            switch (opcode)
+            {
+                case OpCode::LDW:
+                case OpCode::STW:
+                {
+                    if (expressionCanFitIn4Bits)
+                        assembledWords.resize(1 * repetitionCount);
+                    else
+                        assembledWords.resize(2 * repetitionCount);
+
+                    break;
+                }
+                default:
+                {
+                    std::stringstream ss;
+                    ss << "Error: opcode cannot take indirect addressing on line " << lineNum << std::endl;
                     throw std::runtime_error(ss.str());
                 }
             }
@@ -278,52 +317,126 @@ void Statement::assemble(uint32_t &curAddress)
 
             break;
         }
+        case StatementType::ONE_REGISTER_OPCODE:
+        {
+
+            uint16_t op;
+
+            bool useSPR = false;
+
+            switch (opcode)
+            {
+                case OpCode::INCW:
+                    op = Assembly::INCW_INSTRUCTION;
+                    useSPR = true;
+                    break;
+                case OpCode::DECW:
+                    op = Assembly::DECW_INSTRUCTION;
+                    useSPR = true;
+                    break;
+                case OpCode::SL0:
+                    op = Assembly::SL0_INSTRUCTION;
+                    break;
+                case OpCode::SL1:
+                    op = Assembly::SL1_INSTRUCTION;
+                    break;
+                case OpCode::SLA:
+                    op = Assembly::SLA_INSTRUCTION;
+                    break;
+                case OpCode::SLX:
+                    op = Assembly::SLX_INSTRUCTION;
+                    break;
+                case OpCode::RL:
+                    op = Assembly::RL_INSTRUCTION;
+                    break;
+                case OpCode::SR0:
+                    op = Assembly::SR0_INSTRUCTION;
+                    break;
+                case OpCode::SR1:
+                    op = Assembly::SR1_INSTRUCTION;
+                    break;
+                case OpCode::SRA:
+                    op = Assembly::SRA_INSTRUCTION;
+                    break;
+                case OpCode::SRX:
+                    op = Assembly::SRX_INSTRUCTION;
+                    break;
+                case OpCode::RR:
+                    op = Assembly::RR_INSTRUCTION;
+                    break;
+                default:
+                {
+                    std::stringstream ss;
+                    ss << "Error: opcode is not one register opcode on line " << lineNum << std::endl;
+                    throw std::runtime_error(ss.str());
+
+                    break;
+                }
+            }
+
+            if (((uint16_t)regDest >= 16 && ! useSPR) ||
+                    ((uint16_t)regDest < 16 && useSPR))
+            {
+                std::stringstream ss;
+                ss << "Error: illegal destination/source register on line " << lineNum << std::endl;
+                throw std::runtime_error(ss.str());
+
+                break;
+            }
+
+
+            op |= (uint16_t)regDest << 4;
+
+            words.resize(1);
+            words[0] = op;
+
+        }
         case StatementType::TWO_REGISTER_OPCODE:
         {
 
             switch (opcode)
             {
                 case OpCode::ADD:
+                    Assembly::makeArithmeticInstruction(Assembly::ADD_REG_INSTRUCTION, regDest, regSrc, words, lineNum);
                     break;
                 case OpCode::ADC:
+                    Assembly::makeArithmeticInstruction(Assembly::ADC_REG_INSTRUCTION, regDest, regSrc, words, lineNum);
                     break;
                 case OpCode::SUB:
+                    Assembly::makeArithmeticInstruction(Assembly::SUB_REG_INSTRUCTION, regDest, regSrc, words, lineNum);
                     break;
                 case OpCode::SBB:
+                    Assembly::makeArithmeticInstruction(Assembly::SBB_REG_INSTRUCTION, regDest, regSrc, words, lineNum);
                     break;
                 case OpCode::AND:
+                    Assembly::makeArithmeticInstruction(Assembly::AND_REG_INSTRUCTION, regDest, regSrc, words, lineNum);
                     break;
                 case OpCode::OR:
+                    Assembly::makeArithmeticInstruction(Assembly::OR_REG_INSTRUCTION, regDest, regSrc, words, lineNum);
                     break;
                 case OpCode::XOR:
+                    Assembly::makeArithmeticInstruction(Assembly::XOR_REG_INSTRUCTION, regDest, regSrc, words, lineNum);
                     break;
                 case OpCode::CMP:
+                    Assembly::makeArithmeticInstruction(Assembly::CMP_REG_INSTRUCTION, regDest, regSrc, words, lineNum);
                     break;
                 case OpCode::TEST:
+                    Assembly::makeArithmeticInstruction(Assembly::TEST_REG_INSTRUCTION, regDest, regSrc, words, lineNum);
                     break;
                 case OpCode::LOAD:
-                {
-                    uint32_t op = 0b0100101000000000;
-
-                    op |= ((uint32_t)regDest) << 4;
-                    op |= ((uint32_t)regSrc);
-
-                    words.resize(1);
-                    words[0] = op;
-
+                    Assembly::makeArithmeticInstruction(Assembly::LOAD_REG_INSTRUCTION, regDest, regSrc, words, lineNum);
                     break;
-                }
                 case OpCode::MUL:
+                    Assembly::makeArithmeticInstruction(Assembly::MUL_REG_INSTRUCTION, regDest, regSrc, words, lineNum);
                     break;
                 case OpCode::MULS:
+                    Assembly::makeArithmeticInstruction(Assembly::MULS_REG_INSTRUCTION, regDest, regSrc, words, lineNum);
                     break;
                 case OpCode::DIV:
+                    Assembly::makeArithmeticInstruction(Assembly::DIV_REG_INSTRUCTION, regDest, regSrc, words, lineNum);
                     break;
                 case OpCode::DIVS:
-                    break;
-                case OpCode::BSL:
-                    break;
-                case OpCode::BSR:
+                    Assembly::makeArithmeticInstruction(Assembly::DIVS_REG_INSTRUCTION, regDest, regSrc, words, lineNum);
                     break;
                 case OpCode::FMUL:
                     break;
@@ -397,52 +510,52 @@ void Statement::assemble(uint32_t &curAddress)
             switch (opcode)
             {
                 case OpCode::ADD:
-                    Assembly::makeArithmeticInstructionWithImmediate(0b0110000000000000, regDest, expression.value, words, lineNum);
+                    Assembly::makeArithmeticInstructionWithImmediate(Assembly::ADD_IMM_INSTRUCTION, regDest, expression.value, words, lineNum);
                     break;
                 case OpCode::ADC:
-                    Assembly::makeArithmeticInstructionWithImmediate(0b0111000000000000, regDest, expression.value, words, lineNum);
+                    Assembly::makeArithmeticInstructionWithImmediate(Assembly::ADC_IMM_INSTRUCTION, regDest, expression.value, words, lineNum);
                     break;
                 case OpCode::SUB:
-                    Assembly::makeArithmeticInstructionWithImmediate(0b0110100000000000, regDest, expression.value, words, lineNum);
+                    Assembly::makeArithmeticInstructionWithImmediate(Assembly::SUB_IMM_INSTRUCTION, regDest, expression.value, words, lineNum);
                     break;
                 case OpCode::SBB:
-                    Assembly::makeArithmeticInstructionWithImmediate(0b0111100000000000, regDest, expression.value, words, lineNum);
+                    Assembly::makeArithmeticInstructionWithImmediate(Assembly::SBB_IMM_INSTRUCTION, regDest, expression.value, words, lineNum);
                     break;
                 case OpCode::AND:
-                    Assembly::makeArithmeticInstructionWithImmediate(0b0110010000000000, regDest, expression.value, words, lineNum);
+                    Assembly::makeArithmeticInstructionWithImmediate(Assembly::AND_IMM_INSTRUCTION, regDest, expression.value, words, lineNum);
                     break;
                 case OpCode::OR:
-                    Assembly::makeArithmeticInstructionWithImmediate(0b0111010000000000, regDest, expression.value, words, lineNum);
+                    Assembly::makeArithmeticInstructionWithImmediate(Assembly::OR_IMM_INSTRUCTION, regDest, expression.value, words, lineNum);
                     break;
                 case OpCode::XOR:
-                    Assembly::makeArithmeticInstructionWithImmediate(0b0110110000000000, regDest, expression.value, words, lineNum);
+                    Assembly::makeArithmeticInstructionWithImmediate(Assembly::XOR_IMM_INSTRUCTION, regDest, expression.value, words, lineNum);
                     break;
                 case OpCode::CMP:
-                    Assembly::makeArithmeticInstructionWithImmediate(0b0110001000000000, regDest, expression.value, words, lineNum);
+                    Assembly::makeArithmeticInstructionWithImmediate(Assembly::CMP_IMM_INSTRUCTION, regDest, expression.value, words, lineNum);
                     break;
                 case OpCode::TEST:
-                    Assembly::makeArithmeticInstructionWithImmediate(0b0111001000000000, regDest, expression.value, words, lineNum);
+                    Assembly::makeArithmeticInstructionWithImmediate(Assembly::TEST_IMM_INSTRUCTION, regDest, expression.value, words, lineNum);
                     break;
                 case OpCode::LOAD:
-                    Assembly::makeArithmeticInstructionWithImmediate(0b0110101000000000, regDest, expression.value, words, lineNum);
+                    Assembly::makeArithmeticInstructionWithImmediate(Assembly::LOAD_IMM_INSTRUCTION, regDest, expression.value, words, lineNum);
                     break;
                 case OpCode::MUL:
-                    Assembly::makeArithmeticInstructionWithImmediate(0b0110011000000000, regDest, expression.value, words, lineNum);
+                    Assembly::makeArithmeticInstructionWithImmediate(Assembly::MUL_IMM_INSTRUCTION, regDest, expression.value, words, lineNum);
                     break;
                 case OpCode::MULS:
-                    Assembly::makeArithmeticInstructionWithImmediate(0b0111011000000000, regDest, expression.value, words, lineNum);
+                    Assembly::makeArithmeticInstructionWithImmediate(Assembly::MULS_IMM_INSTRUCTION, regDest, expression.value, words, lineNum);
                     break;
                 case OpCode::DIV:
-                    Assembly::makeArithmeticInstructionWithImmediate(0b0110111000000000, regDest, expression.value, words, lineNum);
+                    Assembly::makeArithmeticInstructionWithImmediate(Assembly::DIV_IMM_INSTRUCTION, regDest, expression.value, words, lineNum);
                     break;
                 case OpCode::DIVS:
-                    Assembly::makeArithmeticInstructionWithImmediate(0b0111111000000000, regDest, expression.value, words, lineNum);
+                    Assembly::makeArithmeticInstructionWithImmediate(Assembly::DIVS_IMM_INSTRUCTION, regDest, expression.value, words, lineNum);
                     break;
                 case OpCode::BSL:
-                    Assembly::makeArithmeticInstructionWithImmediate(0b0100000100000000, regDest, expression.value, words, lineNum);
+                    Assembly::makeArithmeticInstructionWithImmediate(Assembly::BSL_INSTRUCTION, regDest, expression.value, words, lineNum);
                     break;
                 case OpCode::BSR:
-                    Assembly::makeArithmeticInstructionWithImmediate(0b0110000100000000, regDest, expression.value, words, lineNum);
+                    Assembly::makeArithmeticInstructionWithImmediate(Assembly::BSR_INSTRUCTION, regDest, expression.value, words, lineNum);
                     break;
                 default:
                 {
@@ -484,6 +597,86 @@ void Statement::assemble(uint32_t &curAddress)
             }
 
             break;
+        }
+        case StatementType::INDIRECT_ADDRESSING_OPCODE:
+        {
+            uint16_t op;
+
+            int16_t idx = (int16_t)regInd - 24;
+
+            if (idx < 0 || idx > 4)
+            {
+                std::stringstream ss;
+                ss << "Error: illegal index register on line " << lineNum << std::endl;
+                throw std::runtime_error(ss.str());
+
+                break;
+            }
+
+            if ((uint16_t)regDest >= 16)
+            {
+                std::stringstream ss;
+                ss << "Error: illegal destination/source register on line " << lineNum << std::endl;
+                throw std::runtime_error(ss.str());
+
+                break;
+            }
+
+            if ((uint16_t)regOffset >= 16)
+            {
+                std::stringstream ss;
+                ss << "Error: illegal offset register on line " << lineNum << std::endl;
+                throw std::runtime_error(ss.str());
+
+                break;
+            }
+
+            switch (opcode)
+            {
+                case OpCode::LDW:
+
+                    op = Assembly::LDW_REG_INSTRUCTION;
+
+                    op |= idx << 8;
+                    op |= (uint16_t)regDest << 4;
+                    op |= (uint16_t)regOffset;
+
+                    break;
+                case OpCode::STW:
+
+                    op = Assembly::STW_REG_INSTRUCTION;
+
+                    op |= idx << 8;
+                    op |= (uint16_t)regDest << 4;
+                    op |= (uint16_t)regOffset;
+
+                    break;
+                default:
+                {
+                    std::stringstream ss;
+                    ss << "Error: opcode cannot take indirect addressing on line " << lineNum << std::endl;
+                    throw std::runtime_error(ss.str());
+
+                    break;
+                }
+            }
+
+            words.resize(1);
+            words[0] = op;
+
+            break;
+        }
+        case StatementType::INDIRECT_ADDRESSING_OPCODE_WITH_EXPRESSION:
+        {
+
+           //std::cout << "Indirect addressing opcode with expression " << *this << std::endl;
+
+           Assembly::makeLoadStoreWithExpression(opcode, lineNum, words, expression.value, regInd, regDest);
+
+           //std::cout << std::hex << words[0] << " " << words[1] << std::endl;
+
+           break;
+
         }
         case StatementType::PSEUDO_OP_WITH_EXPRESSION:
         {

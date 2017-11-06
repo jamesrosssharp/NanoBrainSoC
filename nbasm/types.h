@@ -95,6 +95,8 @@ enum class OpCode : uint32_t
     STSPR,
     OUT,
     IN,
+    INCW,
+    DECW,
     None
 };
 
