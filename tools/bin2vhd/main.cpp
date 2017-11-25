@@ -16,7 +16,7 @@ void printBitVector(std::ostream& outf, uint16_t word)
     outf << "\"";
     for (int i = 0; i < 16; i++)
     {
-        if (word & (1 << (16 - i)))
+        if (word & (1 << (15 - i)))
             outf << "1";
         else
             outf << "0";
@@ -105,6 +105,8 @@ int main(int argc, char** argv)
             {
                 unsigned short s;
                 binf.read((char*)&s, sizeof(unsigned short));
+		if (binf.eof())
+			break;
                 outf << "\t\t\t" << idx++ << " => ";
                 printBitVector(outf, s);
                 outf << "\n";

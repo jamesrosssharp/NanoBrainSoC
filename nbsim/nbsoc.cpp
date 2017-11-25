@@ -42,3 +42,7 @@ void nbSoC::start()
 
 }
 
+void nbSoC::shutDown()
+{
+    m_cpu.shutDown();
+}

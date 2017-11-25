@@ -16,6 +16,7 @@ public:
 
     void hardReset();
     void run();
+    void shutDown();
 
     void runThread();
 
@@ -53,4 +54,5 @@ private:
 
     std::thread m_cpuThread;
 
+    bool m_threadExit;
 };

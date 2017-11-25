@@ -15,7 +15,8 @@
 CPU::CPU(Memory &mem, IOPorts& ioports) :
     m_memory(mem),
     m_ioports(ioports),
-    m_cpuThread([] (CPU* cpu) { cpu->runThread(); }, this)
+    m_cpuThread([] (CPU* cpu) { cpu->runThread(); }, this),
+    m_threadExit(false)
 {
 
 }
@@ -47,12 +48,19 @@ void CPU::run()
 
 }
 
+void CPU::shutDown()
+{
+    m_threadExit = true;
+    m_cond.notify_all();
+    m_cpuThread.join();
+}
+
 void CPU::runThread()
 {
     std::unique_lock<std::mutex> lock(m_mutex);
     m_cond.wait(lock);
 
-    while (true)
+    while (! m_threadExit)
     {
         clockTick();
 

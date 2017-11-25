@@ -1,8 +1,9 @@
 
 all: bootloader.vhd
 
-bootloader.vhd: bootloader.bin AlteraRomTemplate.vhd
-	bin2vhd -t AlteraRomTemplate.vhd -o bootloader.vhd bootloader.bin
+bootloader.vhd: bootloader.bin ../Templates/AlteraRomTemplate.vhd
+	bin2vhd -t ../Templates/AlteraRomTemplate.vhd \
+			-o bootloader.vhd bootloader.bin
 
 bootloader.bin: bootloader.asm ../../bin/nbasm
 	nbasm -t bin -o bootloader.bin bootloader.asm

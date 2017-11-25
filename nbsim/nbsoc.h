@@ -22,6 +22,7 @@ public:
     void onLedGreenWrite(std::function<void (uint16_t)> func );
 
     void start();
+    void shutDown();
 
 private:
 

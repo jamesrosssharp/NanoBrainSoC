@@ -19,7 +19,7 @@ SimulatorWindow::SimulatorWindow(QWidget *parent) :
 SimulatorWindow::~SimulatorWindow()
 {
     delete ui;
-    delete m_timer;
+    //delete m_timer;
 }
 
 void SimulatorWindow::onBlitToGfxRam(nbSoC& nanobrain)
@@ -33,3 +33,7 @@ void SimulatorWindow::onLedGreenWrite(uint16_t val)
 
 }
 
+void SimulatorWindow::closeEvent(QCloseEvent *ev)
+{
+    m_onCloseEvent();
+}
