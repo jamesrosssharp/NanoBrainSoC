@@ -8,7 +8,7 @@ struct nbInstructionDecodeInfo
     UniqueOpCode opcode;
     uint16_t instruction;
     uint16_t mask;
-    char* string;
+    const char* string;
 };
 
 static const nbInstructionDecodeInfo instructionInfo[] =
@@ -38,20 +38,20 @@ static const nbInstructionDecodeInfo instructionInfo[] =
     {UniqueOpCode::SR0,     NB_SR0_INSTRUCTION,     NB_SHIFT_INSTRUCTION_MASK, "sr0"},
     {UniqueOpCode::SR1,     NB_SR1_INSTRUCTION,     NB_SHIFT_INSTRUCTION_MASK, "sr1"},
     {UniqueOpCode::RR,      NB_RR_INSTRUCTION,      NB_SHIFT_INSTRUCTION_MASK, "rr"},
-    {UniqueOpCode::CMP_IMM,     NB_CMP_IMM_INSTRUCTION,    NB_ARITH_INSTRUCTION_MASK, "cmp_imm"},
-    {UniqueOpCode::CMP_REG,     NB_CMP_REG_INSTRUCTION,    NB_ARITH_INSTRUCTION_MASK, "cmp_reg"},
-    {UniqueOpCode::TEST_IMM,    NB_TEST_IMM_INSTRUCTION,   NB_ARITH_INSTRUCTION_MASK, "test_imm"},
-    {UniqueOpCode::TEST_REG,    NB_TEST_REG_INSTRUCTION,   NB_ARITH_INSTRUCTION_MASK, "test_reg"},
-    {UniqueOpCode::LOAD_IMM,    NB_LOAD_IMM_INSTRUCTION,   NB_ARITH_INSTRUCTION_MASK, "load_imm"},
-    {UniqueOpCode::LOAD_REG,    NB_LOAD_REG_INSTRUCTION,   NB_ARITH_INSTRUCTION_MASK, "load_reg"},
-    {UniqueOpCode::MUL_IMM,     NB_MUL_IMM_INSTRUCTION,    NB_ARITH_INSTRUCTION_MASK, "mul_imm"},
-    {UniqueOpCode::MUL_REG,     NB_MUL_REG_INSTRUCTION,    NB_ARITH_INSTRUCTION_MASK, "mul_reg"},
-    {UniqueOpCode::MULS_IMM,    NB_MULS_IMM_INSTRUCTION,   NB_ARITH_INSTRUCTION_MASK, "muls_imm"},
-    {UniqueOpCode::MULS_REG,    NB_MULS_REG_INSTRUCTION,   NB_ARITH_INSTRUCTION_MASK, "muls_reg"},
-    {UniqueOpCode::DIV_IMM,     NB_DIV_IMM_INSTRUCTION,    NB_ARITH_INSTRUCTION_MASK, "div_imm"},
-    {UniqueOpCode::DIV_REG,     NB_DIV_REG_INSTRUCTION,    NB_ARITH_INSTRUCTION_MASK, "div_reg"},
-    {UniqueOpCode::DIVS_IMM,    NB_DIVS_IMM_INSTRUCTION,   NB_ARITH_INSTRUCTION_MASK, "divs_imm"},
-    {UniqueOpCode::DIVS_REG,    NB_DIVS_REG_INSTRUCTION,   NB_ARITH_INSTRUCTION_MASK, "divs_reg"},
+    {UniqueOpCode::CMP_IMM,     NB_CMP_IMM_INSTRUCTION,    NB_ARITH_INSTRUCTION_MASK, "cmp"},
+    {UniqueOpCode::CMP_REG,     NB_CMP_REG_INSTRUCTION,    NB_ARITH_INSTRUCTION_MASK, "cmp"},
+    {UniqueOpCode::TEST_IMM,    NB_TEST_IMM_INSTRUCTION,   NB_ARITH_INSTRUCTION_MASK, "test"},
+    {UniqueOpCode::TEST_REG,    NB_TEST_REG_INSTRUCTION,   NB_ARITH_INSTRUCTION_MASK, "test"},
+    {UniqueOpCode::LOAD_IMM,    NB_LOAD_IMM_INSTRUCTION,   NB_ARITH_INSTRUCTION_MASK, "load"},
+    {UniqueOpCode::LOAD_REG,    NB_LOAD_REG_INSTRUCTION,   NB_ARITH_INSTRUCTION_MASK, "load"},
+    {UniqueOpCode::MUL_IMM,     NB_MUL_IMM_INSTRUCTION,    NB_ARITH_INSTRUCTION_MASK, "mul"},
+    {UniqueOpCode::MUL_REG,     NB_MUL_REG_INSTRUCTION,    NB_ARITH_INSTRUCTION_MASK, "mul"},
+    {UniqueOpCode::MULS_IMM,    NB_MULS_IMM_INSTRUCTION,   NB_ARITH_INSTRUCTION_MASK, "muls"},
+    {UniqueOpCode::MULS_REG,    NB_MULS_REG_INSTRUCTION,   NB_ARITH_INSTRUCTION_MASK, "muls"},
+    {UniqueOpCode::DIV_IMM,     NB_DIV_IMM_INSTRUCTION,    NB_ARITH_INSTRUCTION_MASK, "div"},
+    {UniqueOpCode::DIV_REG,     NB_DIV_REG_INSTRUCTION,    NB_ARITH_INSTRUCTION_MASK, "div"},
+    {UniqueOpCode::DIVS_IMM,    NB_DIVS_IMM_INSTRUCTION,   NB_ARITH_INSTRUCTION_MASK, "divs"},
+    {UniqueOpCode::DIVS_REG,    NB_DIVS_REG_INSTRUCTION,   NB_ARITH_INSTRUCTION_MASK, "divs"},
     {UniqueOpCode::BSL,         NB_BSL_INSTRUCTION,        NB_BS_INSTRUCTION_MASK, "bsl"},
     {UniqueOpCode::BSR,         NB_BSR_INSTRUCTION,        NB_BS_INSTRUCTION_MASK, "bsr"},
     {UniqueOpCode::FMUL,        NB_FMUL_INSTRUCTION,       NB_FPU_INSTRUCTION_MASK, "fmul"},

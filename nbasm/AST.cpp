@@ -778,19 +778,6 @@ std::ostream& operator << (std::ostream& os, const Expression& e)
     return os;
 }
 
-std::ostream& operator << (std::ostream& os, const Register& r)
-{
-    if (r == Register::None)
-        os << "nil";
-    else
-    {
-        if ((uint32_t)r < 16)
-            os << "r" << (uint32_t)r;
-        else
-            os << "s" << ((uint32_t)r - 16);
-    }
-}
-
 std::ostream& operator << (std::ostream& os, const OpCode& op)
 {
     if (op == OpCode::IMM)

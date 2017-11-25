@@ -24,7 +24,7 @@ banner_loop:
         cmp r0, 0
         jumpz done_banner_loop
         call OutByte
-        add r1, 1
+        add r1, 2
         jump banner_loop
 
 
@@ -37,12 +37,26 @@ OutByte:
 
         stw r1, [s8, 0]
         decw s8
+	stw r2, [s8, 0]
+	decw s8
+	stw r3, [s8, 0]
+	decw s8
 
+	// preserve link register
+	stspr r2, s1
+	
         call WaitTxNotFull
 
         load r1, 0
         out r0, r1
 
+	// restore link register
+	ldspr s1, r2
+
+	incw s8
+	ldw r3, [s8, 0]
+	incw s8
+	ldw r2, [s8, 0]
         incw s8
         ldw r1, [s8, 0]
 
@@ -56,8 +70,8 @@ WaitTxNotFull:
         decw s8
 
         load r0, 3
-        in   r1, r0
 WaitLoop:
+        in   r1, r0
         test r1, 1  // TX_FIFO_FULL
         jumpnz WaitLoop
 

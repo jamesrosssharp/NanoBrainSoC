@@ -83,7 +83,6 @@ std::ostream& operator << (std::ostream&, const Statement&);
 std::ostream& operator << (std::ostream& os, const AST& ast);
 std::ostream& operator << (std::ostream& os, const ExpressionElement& e);
 std::ostream& operator << (std::ostream& os, const Expression& e);
-std::ostream& operator << (std::ostream& os, const Register& r);
 std::ostream& operator << (std::ostream& os, const OpCode& op);
 std::ostream& operator << (std::ostream& os, const PseudoOp& ps);
 std::ostream& operator << (std::ostream& os, const Symbol& sym);

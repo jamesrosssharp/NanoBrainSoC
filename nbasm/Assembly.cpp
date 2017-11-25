@@ -93,7 +93,7 @@ void Assembly::makeFlowControlInstruction(OpCode opcode, uint32_t address, uint3
 
     // check if relative address is possible
 
-    int32_t diff        = target - address;
+    int32_t diff        = (target - address) / 2;
     bool    useRelative = false;
 
     if ((diff >= 0 && diff < 256) || (diff < 0 && diff >= -256))
@@ -137,33 +137,33 @@ void Assembly::makeFlowControlInstruction(OpCode opcode, uint32_t address, uint3
             break;
         case OpCode::CALL:
             if (useRelative)
-                op = JUMP_REL_INSTRUCTION;
+                op = CALL_REL_INSTRUCTION;
             else
-                op = JUMP_INSTRUCTION;
+                op = CALL_INSTRUCTION;
             break;
         case OpCode::CALLC:
             if (useRelative)
-                op = JUMPC_REL_INSTRUCTION;
+                op = CALLC_REL_INSTRUCTION;
             else
-                op = JUMPC_INSTRUCTION;
+                op = CALLC_INSTRUCTION;
             break;
         case OpCode::CALLZ:
             if (useRelative)
-                op = JUMPZ_REL_INSTRUCTION;
+                op = CALLZ_REL_INSTRUCTION;
             else
-                op = JUMPZ_INSTRUCTION;
+                op = CALLZ_INSTRUCTION;
             break;
         case OpCode::CALLNC:
             if (useRelative)
-                op = JUMPNC_REL_INSTRUCTION;
+                op = CALLNC_REL_INSTRUCTION;
             else
-                op = JUMPNC_INSTRUCTION;
+                op = CALLNC_INSTRUCTION;
             break;
         case OpCode::CALLNZ:
             if (useRelative)
-                op = JUMPNZ_REL_INSTRUCTION;
+                op = CALLNZ_REL_INSTRUCTION;
             else
-                op = JUMPNZ_INSTRUCTION;
+                op = CALLNZ_INSTRUCTION;
             break;
         default:
         {

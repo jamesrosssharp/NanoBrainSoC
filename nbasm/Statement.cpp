@@ -384,8 +384,10 @@ void Statement::assemble(uint32_t &curAddress)
                 break;
             }
 
-
-            op |= (uint16_t)regDest << 4;
+            if (useSPR)
+                op |= ((uint16_t)regDest - 16) << 4;
+            else
+                op |= ((uint16_t)regDest) << 4;
 
             words.resize(1);
             words[0] = op;
@@ -486,10 +488,42 @@ void Statement::assemble(uint32_t &curAddress)
                     break;
                 }
                 case OpCode::STSPR:
+                {
+                    uint16_t op = Assembly::STSPR_INSTRUCTION;
+
+                    if ((uint32_t)regSrc < 16)
+                    {
+                        std::stringstream ss;
+                        ss << "Error: src register is not an SPR on line " << lineNum << std::endl;
+                        throw std::runtime_error(ss.str());
+                    }
+
+                    if ((uint32_t)regDest > 15)
+                    {
+                        std::stringstream ss;
+                        ss << "Error: dest register is not a GPR on line " << lineNum << std::endl;
+                        throw std::runtime_error(ss.str());
+                    }
+
+                    if ((uint32_t)regDest & 1)
+                    {
+                        std::stringstream ss;
+                        ss << "Error: dest register must be r0, r2, r4, r6, r8, r10, r12, or r14 on line " << lineNum << std::endl;
+                        throw std::runtime_error(ss.str());
+                    }
+
+                    op |= ((uint16_t)regDest & 0x0e) << 4;
+                    op |= ((uint16_t)regSrc - 16);
+
+                    words.resize(1);
+                    words[0] = op;
+
                     break;
+
+                }
                 case OpCode::OUT:
                 {
-                    uint16_t op = 0b1111110000000000;
+                    uint16_t op = Assembly::OUT_INSTRUCTION;
 
                     op |= ((uint16_t)regDest) << 4;
                     op |= ((uint16_t)regSrc);
@@ -500,7 +534,17 @@ void Statement::assemble(uint32_t &curAddress)
                     break;
                 }
                 case OpCode::IN:
+                {
+                    uint16_t op = Assembly::IN_INSTRUCTION;
+
+                    op |= ((uint16_t)regDest) << 4;
+                    op |= ((uint16_t)regSrc);
+
+                    words.resize(1);
+                    words[0] = op;
+
                     break;
+                }
             }
 
             break;

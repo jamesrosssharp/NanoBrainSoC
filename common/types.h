@@ -1,5 +1,7 @@
 #pragma once
 
+#include <iostream>
+
 enum class Register : uint32_t
 {
     r0 = 0,
@@ -198,3 +200,15 @@ enum class PseudoOp : uint32_t
     None
 };
 
+inline std::ostream& operator << (std::ostream& os, const Register& r)
+{
+    if (r == Register::None)
+        os << "nil";
+    else
+    {
+        if ((uint32_t)r < 16)
+            os << "r" << (uint32_t)r;
+        else
+            os << "s" << ((uint32_t)r - 16);
+    }
+}
