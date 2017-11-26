@@ -92,6 +92,8 @@ int main(int argc, char** argv)
 
     nanobrain.onBlitToGfxRam ([&] ()         { w.onBlitToGfxRam(nanobrain); });
     nanobrain.onLedGreenWrite([&] (uint16_t ledGreen) { w.onLedGreenWrite(ledGreen); });
+    nanobrain.onLedRedWrite([&]   (uint16_t ledRed)   { w.onLedRedWrite(ledRed); });
+    nanobrain.onHexWrite([&]   (int hex, uint16_t val)   { w.onHexWrite(hex, val); });
 
     // Boot cpu
 

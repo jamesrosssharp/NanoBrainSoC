@@ -9,7 +9,7 @@ void Assembly::makeArithmeticInstructionWithImmediate(uint16_t opcode, Register 
 
     int16_t val = value;
 
-    if ((int32_t)val != value)
+    if (((uint32_t)value & 0xffff) != (uint32_t)value)
     {
         std::stringstream ss;
         ss << "Error: expression will not fit in 16 bits on line " << lineNum << std::endl;

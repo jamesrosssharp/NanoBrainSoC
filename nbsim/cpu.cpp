@@ -658,7 +658,7 @@ void CPU::executeInstruction()
             int regx = (m_instruction & 0xf0) >> 4;
             int regy =  m_instruction & 0x0f;
 
-            m_gprRegisters[regx] = regy;
+            m_gprRegisters[regx] = m_gprRegisters[regy];
 
             MAKE_DBG((Register)regx << "," << (Register)regy);
 
@@ -685,9 +685,11 @@ void CPU::executeInstruction()
             int regx = (m_instruction & 0xf0) >> 4;
             int shift =  m_instruction & 0x0f;
 
-            std::uint32_t regVal = m_gprRegisters[regVal];
+            std::uint32_t regVal = m_gprRegisters[regx];
 
-            m_gprRegisters[regx] = regVal << shift | ((regVal & ((1 << (16 - shift)) - 1)) >> (16 - shift));
+            //printf("BSL: %x %x %x\n", regx, shift, regVal);
+
+            m_gprRegisters[regx] = (regVal << shift) | ((regVal & ((1 << (16 - shift)) - 1)) >> (16 - shift));
             break;
         }
         case UniqueOpCode::BSR:
@@ -695,9 +697,13 @@ void CPU::executeInstruction()
             int regx = (m_instruction & 0xf0) >> 4;
             int shift =  m_instruction & 0x0f;
 
-            std::uint32_t regVal = m_gprRegisters[regVal];
+            std::uint32_t regVal = m_gprRegisters[regx];
 
-            m_gprRegisters[regx] = regVal >> shift | ((regVal & ((1 << (shift)) - 1)) << (shift));
+            //printf("BSR: %x %x %04x\n", regx, shift, regVal);
+
+            m_gprRegisters[regx] = (regVal >> shift) | ((regVal & ((1 << (16 - shift)) - 1)) << (16 - shift));
+
+            //printf("BSR OUT: %x\n", m_gprRegisters[regx]);
             break;
         }
         case UniqueOpCode::FMUL:
@@ -1038,6 +1044,11 @@ void CPU::executeInstruction()
 
         for (int i = 0; i < 16; i ++)
             std::cout << std::hex << std::setw(4) << std::setfill('0') << m_gprRegisters[i] << " ";
+
+        std::cout << std::endl;
+
+        for (int i = 0; i < 16; i ++)
+            std::cout << std::hex << std::setw(8) << std::setfill('0') << m_sprRegisters[i] << " ";
 
         std::cout << std::endl;
 

@@ -395,6 +395,7 @@ void Statement::assemble(uint32_t &curAddress)
         }
         case StatementType::TWO_REGISTER_OPCODE:
         {
+            words.resize(1);
 
             switch (opcode)
             {

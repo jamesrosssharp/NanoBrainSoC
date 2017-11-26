@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <functional>
 
 #include "ledswitch.h"
 #include "uart.h"
@@ -29,6 +30,11 @@ public:
 
     std::uint16_t inPort(std::uint16_t port);
     void          outPort(std::uint16_t port, std::uint16_t value);
+
+    void onLedGreenWrite(std::function<void (uint16_t)> func );
+    void onLedRedWrite(std::function<void (uint16_t)> func );
+    void onHexWrite(std::function<void (int, uint16_t)> func );
+
 
 private:
 

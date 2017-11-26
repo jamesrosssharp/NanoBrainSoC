@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>840</width>
+    <width>916</width>
     <height>712</height>
    </rect>
   </property>
@@ -89,7 +89,7 @@
               <item>
                <layout class="QHBoxLayout" name="horizontalLayout_10">
                 <item>
-                 <widget class="QLabel" name="label_6">
+                 <widget class="QLabel" name="redLed9">
                   <property name="sizePolicy">
                    <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
                     <horstretch>0</horstretch>
@@ -111,7 +111,7 @@
                  </widget>
                 </item>
                 <item>
-                 <widget class="QLabel" name="label_17">
+                 <widget class="QLabel" name="redLed8">
                   <property name="sizePolicy">
                    <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
                     <horstretch>0</horstretch>
@@ -133,7 +133,7 @@
                  </widget>
                 </item>
                 <item>
-                 <widget class="QLabel" name="label_16">
+                 <widget class="QLabel" name="redLed7">
                   <property name="sizePolicy">
                    <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
                     <horstretch>0</horstretch>
@@ -155,7 +155,7 @@
                  </widget>
                 </item>
                 <item>
-                 <widget class="QLabel" name="label_15">
+                 <widget class="QLabel" name="redLed6">
                   <property name="sizePolicy">
                    <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
                     <horstretch>0</horstretch>
@@ -177,7 +177,7 @@
                  </widget>
                 </item>
                 <item>
-                 <widget class="QLabel" name="label_14">
+                 <widget class="QLabel" name="redLed5">
                   <property name="sizePolicy">
                    <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
                     <horstretch>0</horstretch>
@@ -199,7 +199,7 @@
                  </widget>
                 </item>
                 <item>
-                 <widget class="QLabel" name="label_13">
+                 <widget class="QLabel" name="redLed4">
                   <property name="sizePolicy">
                    <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
                     <horstretch>0</horstretch>
@@ -221,7 +221,7 @@
                  </widget>
                 </item>
                 <item>
-                 <widget class="QLabel" name="label_12">
+                 <widget class="QLabel" name="redLed3">
                   <property name="sizePolicy">
                    <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
                     <horstretch>0</horstretch>
@@ -243,7 +243,7 @@
                  </widget>
                 </item>
                 <item>
-                 <widget class="QLabel" name="label_11">
+                 <widget class="QLabel" name="redLed2">
                   <property name="sizePolicy">
                    <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
                     <horstretch>0</horstretch>
@@ -265,7 +265,7 @@
                  </widget>
                 </item>
                 <item>
-                 <widget class="QLabel" name="label_10">
+                 <widget class="QLabel" name="redLed1">
                   <property name="sizePolicy">
                    <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
                     <horstretch>0</horstretch>
@@ -287,7 +287,7 @@
                  </widget>
                 </item>
                 <item>
-                 <widget class="QLabel" name="label_9">
+                 <widget class="QLabel" name="redLed0">
                   <property name="sizePolicy">
                    <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
                     <horstretch>0</horstretch>
@@ -309,7 +309,7 @@
                  </widget>
                 </item>
                 <item>
-                 <widget class="QLabel" name="label_8">
+                 <widget class="QLabel" name="greenLed7">
                   <property name="sizePolicy">
                    <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
                     <horstretch>0</horstretch>
@@ -331,7 +331,7 @@
                  </widget>
                 </item>
                 <item>
-                 <widget class="QLabel" name="label_7">
+                 <widget class="QLabel" name="greenLed6">
                   <property name="sizePolicy">
                    <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
                     <horstretch>0</horstretch>
@@ -353,7 +353,7 @@
                  </widget>
                 </item>
                 <item>
-                 <widget class="QLabel" name="label_5">
+                 <widget class="QLabel" name="greenLed5">
                   <property name="sizePolicy">
                    <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
                     <horstretch>0</horstretch>
@@ -375,7 +375,7 @@
                  </widget>
                 </item>
                 <item>
-                 <widget class="QLabel" name="label_4">
+                 <widget class="QLabel" name="greenLed4">
                   <property name="sizePolicy">
                    <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
                     <horstretch>0</horstretch>
@@ -397,7 +397,7 @@
                  </widget>
                 </item>
                 <item>
-                 <widget class="QLabel" name="label_3">
+                 <widget class="QLabel" name="greenLed3">
                   <property name="sizePolicy">
                    <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
                     <horstretch>0</horstretch>
@@ -419,7 +419,51 @@
                  </widget>
                 </item>
                 <item>
-                 <widget class="QLabel" name="label_2">
+                 <widget class="QLabel" name="greenLed2">
+                  <property name="sizePolicy">
+                   <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                   </sizepolicy>
+                  </property>
+                  <property name="minimumSize">
+                   <size>
+                    <width>32</width>
+                    <height>32</height>
+                   </size>
+                  </property>
+                  <property name="styleSheet">
+                   <string notr="true">QLabel { background: url(:/images/assets/LED.png) no-repeat };</string>
+                  </property>
+                  <property name="text">
+                   <string/>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QLabel" name="greenLed1">
+                  <property name="sizePolicy">
+                   <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                   </sizepolicy>
+                  </property>
+                  <property name="minimumSize">
+                   <size>
+                    <width>32</width>
+                    <height>32</height>
+                   </size>
+                  </property>
+                  <property name="styleSheet">
+                   <string notr="true">QLabel { background: url(:/images/assets/LED.png) no-repeat };</string>
+                  </property>
+                  <property name="text">
+                   <string/>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QLabel" name="greenLed0">
                   <property name="sizePolicy">
                    <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
                     <horstretch>0</horstretch>
@@ -446,7 +490,7 @@
             </widget>
            </item>
            <item>
-            <widget class="QFrame" name="frame_5">
+            <widget class="QFrame" name="FrameForHex">
              <property name="frameShape">
               <enum>QFrame::StyledPanel</enum>
              </property>
@@ -455,96 +499,7 @@
              </property>
              <layout class="QHBoxLayout" name="horizontalLayout_12">
               <item>
-               <layout class="QHBoxLayout" name="horizontalLayout_9">
-                <item>
-                 <widget class="QLabel" name="label_21">
-                  <property name="sizePolicy">
-                   <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-                    <horstretch>0</horstretch>
-                    <verstretch>0</verstretch>
-                   </sizepolicy>
-                  </property>
-                  <property name="minimumSize">
-                   <size>
-                    <width>32</width>
-                    <height>64</height>
-                   </size>
-                  </property>
-                  <property name="styleSheet">
-                   <string notr="true">QLabel { background: url(:/images/assets/hex-display.png) no-repeat };</string>
-                  </property>
-                  <property name="text">
-                   <string/>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="QLabel" name="label_20">
-                  <property name="sizePolicy">
-                   <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-                    <horstretch>0</horstretch>
-                    <verstretch>0</verstretch>
-                   </sizepolicy>
-                  </property>
-                  <property name="minimumSize">
-                   <size>
-                    <width>32</width>
-                    <height>64</height>
-                   </size>
-                  </property>
-                  <property name="styleSheet">
-                   <string notr="true">QLabel { background: url(:/images/assets/hex-display.png) no-repeat };</string>
-                  </property>
-                  <property name="text">
-                   <string/>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="QLabel" name="label_19">
-                  <property name="sizePolicy">
-                   <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-                    <horstretch>0</horstretch>
-                    <verstretch>0</verstretch>
-                   </sizepolicy>
-                  </property>
-                  <property name="minimumSize">
-                   <size>
-                    <width>32</width>
-                    <height>64</height>
-                   </size>
-                  </property>
-                  <property name="styleSheet">
-                   <string notr="true">QLabel { background: url(:/images/assets/hex-display.png) no-repeat };</string>
-                  </property>
-                  <property name="text">
-                   <string/>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="QLabel" name="label_18">
-                  <property name="sizePolicy">
-                   <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-                    <horstretch>0</horstretch>
-                    <verstretch>0</verstretch>
-                   </sizepolicy>
-                  </property>
-                  <property name="minimumSize">
-                   <size>
-                    <width>32</width>
-                    <height>64</height>
-                   </size>
-                  </property>
-                  <property name="styleSheet">
-                   <string notr="true">QLabel { background: url(:/images/assets/hex-display.png) no-repeat };</string>
-                  </property>
-                  <property name="text">
-                   <string/>
-                  </property>
-                 </widget>
-                </item>
-               </layout>
+               <layout class="QHBoxLayout" name="LayoutForHex"/>
               </item>
              </layout>
             </widget>

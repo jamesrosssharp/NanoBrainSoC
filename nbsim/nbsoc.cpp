@@ -24,13 +24,20 @@ void nbSoC::onBlitToGfxRam(std::function<void ()> func)
 {
 }
 
-void nbSoC::onUARTTxChar(std::function<void (char c)> func)
-{
-    m_onUARTTxChar = func;
-}
 
 void nbSoC::onLedGreenWrite(std::function<void (uint16_t)> func )
 {
+    m_ioports.onLedGreenWrite(func);
+}
+
+void nbSoC::onLedRedWrite(std::function<void (uint16_t)> func )
+{
+    m_ioports.onLedRedWrite(func);
+}
+
+void nbSoC::onHexWrite(std::function<void (int, uint16_t)> func )
+{
+    m_ioports.onHexWrite(func);
 }
 
 void nbSoC::start()

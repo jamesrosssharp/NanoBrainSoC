@@ -41,4 +41,7 @@ src/Test/
 support/3DEngine/
 tools/bin2vhd/ROM.vhd
 tools/bin2vhd/bin2vhd
+HDL/SoC/#NanoBrainSoC.vhd#
+src/NightRider/nightrider.bin
+src/NightRider/nightrider.vhd
 

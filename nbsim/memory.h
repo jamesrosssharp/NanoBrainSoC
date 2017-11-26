@@ -19,9 +19,9 @@ private:
 
     const std::uint32_t kDDRSizeInWords   = 4*1024*1024; // 8MiB
     const std::uint32_t kFlashSizeInWords = 2*1024*1024; // 4 MiB
-    const std::uint32_t kBRAMSizeInWords  = 512; // 1024k
+    const std::uint32_t kBRAMSizeInWords  = 1024; // 2048k
 
-    const std::uint32_t kBRAMAddressMask = 0x1ff; // word mask (512), used to and with address to wrap BRAM
+    const std::uint32_t kBRAMAddressMask = 0x3ff; // word mask (1024), used to and with address to wrap BRAM
                                                   // address space
 
     // all addresses in words

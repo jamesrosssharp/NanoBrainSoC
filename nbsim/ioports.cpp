@@ -58,4 +58,18 @@ void          IOPorts::outPort(std::uint16_t port, std::uint16_t value)
     }
 }
 
+void IOPorts::onLedGreenWrite(std::function<void (uint16_t)> func )
+{
+    m_ledSwitch.onLedGreenWrite(func);
+}
+
+void IOPorts::onLedRedWrite(std::function<void (uint16_t)> func )
+{
+    m_ledSwitch.onLedRedWrite(func);
+}
+
+void IOPorts::onHexWrite(std::function<void (int, uint16_t)> func )
+{
+    m_ledSwitch.onHexWrite(func);
+}
 
