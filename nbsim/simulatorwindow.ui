@@ -520,7 +520,7 @@
               <item>
                <layout class="QHBoxLayout" name="horizontalLayout_5">
                 <item>
-                 <widget class="QPushButton" name="pushButton">
+                 <widget class="QPushButton" name="Key3">
                   <property name="sizePolicy">
                    <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
                     <horstretch>0</horstretch>
@@ -548,7 +548,7 @@ border: none;
                  </widget>
                 </item>
                 <item>
-                 <widget class="QPushButton" name="pushButton_4">
+                 <widget class="QPushButton" name="Key2">
                   <property name="sizePolicy">
                    <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
                     <horstretch>0</horstretch>
@@ -576,7 +576,7 @@ border: none;
                  </widget>
                 </item>
                 <item>
-                 <widget class="QPushButton" name="pushButton_3">
+                 <widget class="QPushButton" name="Key1">
                   <property name="sizePolicy">
                    <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
                     <horstretch>0</horstretch>
@@ -604,7 +604,7 @@ border: none;
                  </widget>
                 </item>
                 <item>
-                 <widget class="QPushButton" name="pushButton_2">
+                 <widget class="QPushButton" name="Key0">
                   <property name="sizePolicy">
                    <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
                     <horstretch>0</horstretch>
@@ -935,5 +935,42 @@ QCheckBox::indicator:checked {
   </widget>
  </widget>
  <resources/>
- <connections/>
+ <connections>
+  <connection>
+   <sender>Key0</sender>
+   <signal>pressed()</signal>
+   <receiver>SimulatorWindow</receiver>
+   <slot>onResetPressed()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>377</x>
+     <y>651</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>457</x>
+     <y>355</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>Key0</sender>
+   <signal>released()</signal>
+   <receiver>SimulatorWindow</receiver>
+   <slot>onResetReleased()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>377</x>
+     <y>651</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>457</x>
+     <y>355</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
+ <slots>
+  <slot>onResetPressed()</slot>
+  <slot>onResetReleased()</slot>
+ </slots>
 </ui>

@@ -35,6 +35,10 @@ public:
     void onLedRedWrite(std::function<void (uint16_t)> func );
     void onHexWrite(std::function<void (int, uint16_t)> func );
 
+    void hardReset()
+    {
+        m_ledSwitch.hardReset();
+    }
 
 private:
 

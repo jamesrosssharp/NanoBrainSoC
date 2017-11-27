@@ -22,6 +22,8 @@ public:
     void onLedRedWrite(std::function<void (uint16_t)> func );
     void onHexWrite(std::function<void (int, uint16_t)> func );
 
+    void onResetButtonPressed(bool pressed);
+
     void start();
     void shutDown();
 

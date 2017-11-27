@@ -30,12 +30,16 @@ public:
     void onLedRedWrite(std::uint16_t val);
     void onHexWrite(int hex, std::uint16_t val);
 
+    void onResetButtonPressed(std::function<void (bool)> func) { m_onResetButton = func; }
     void setOnCloseEvent(std::function<void()> func) { m_onCloseEvent = func; }
 
     void closeEvent(QCloseEvent *ev);
 
 public slots:
     void update();
+
+    void onResetPressed();
+    void onResetReleased();
 
 private:
     Ui::SimulatorWindow *ui;
@@ -48,7 +52,8 @@ private:
     HexDisplayLabel* m_hexLabels[4];
     std::uint16_t m_hexVals[4];
 
-    std::function<void()> m_onCloseEvent;
+    std::function<void()>       m_onCloseEvent;
+    std::function<void (bool)>  m_onResetButton;
 };
 
 #endif // SIMULATORWINDOW_H

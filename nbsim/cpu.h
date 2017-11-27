@@ -20,6 +20,8 @@ public:
 
     void runThread();
 
+    void holdInReset(bool hold);
+
 private:
 
     void clockTick();
@@ -55,4 +57,5 @@ private:
     std::thread m_cpuThread;
 
     bool m_threadExit;
+    volatile bool m_threadPause;
 };

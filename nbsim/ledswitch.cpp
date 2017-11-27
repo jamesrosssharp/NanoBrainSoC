@@ -24,6 +24,28 @@ std::uint16_t LedSwitch::inPort(std::uint16_t reg)
 
 }
 
+void LedSwitch::hardReset()
+{
+    m_greenLeds = 0;
+    m_onLedGreenWrite(0);
+
+    m_redLeds = 0;
+    m_onLedRedWrite(0);
+
+    m_hex0 = 0;
+    m_onHexWrite(0, 0);
+
+    m_hex1 = 0;
+    m_onHexWrite(1, 0);
+
+    m_hex2 = 0;
+    m_onHexWrite(2, 0);
+
+    m_hex3 = 0;
+    m_onHexWrite(3, 0);
+
+}
+
 void          LedSwitch::outPort(std::uint16_t reg, std::uint16_t value)
 {
     switch ((LedSwitchPort)reg)

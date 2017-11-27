@@ -53,3 +53,9 @@ void nbSoC::shutDown()
 {
     m_cpu.shutDown();
 }
+
+void nbSoC::onResetButtonPressed(bool pressed)
+{
+    m_cpu.holdInReset(pressed);
+}
+

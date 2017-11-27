@@ -16,7 +16,8 @@ CPU::CPU(Memory &mem, IOPorts& ioports) :
     m_memory(mem),
     m_ioports(ioports),
     m_cpuThread([] (CPU* cpu) { cpu->runThread(); }, this),
-    m_threadExit(false)
+    m_threadExit(false),
+    m_threadPause(false)
 {
 
 }
@@ -38,6 +39,8 @@ void CPU::hardReset()
     m_interrupt = 0;
     m_exception = 0;
     m_svc = 0;
+
+    m_ioports.hardReset();
 }
 
 void CPU::run()
@@ -57,11 +60,20 @@ void CPU::shutDown()
 
 void CPU::runThread()
 {
-    std::unique_lock<std::mutex> lock(m_mutex);
-    m_cond.wait(lock);
+    {
+        std::unique_lock<std::mutex> lock(m_mutex);
+        m_cond.wait(lock);
+    }
 
     while (! m_threadExit)
     {
+        if (m_threadPause)
+        {
+            m_threadPause = false;
+            std::unique_lock<std::mutex> lock(m_mutex);
+            m_cond.wait(lock);
+        }
+
         clockTick();
 
         struct timespec tm1, tm2;
@@ -72,6 +84,21 @@ void CPU::runThread()
         //usleep(1000);
     }
 
+}
+
+void CPU::holdInReset(bool hold)
+{
+    if (hold)
+    {
+        m_threadPause = true;
+        while (m_threadPause)
+            usleep(100);
+        hardReset();
+    }
+    else
+    {
+        m_cond.notify_all();
+    }
 }
 
 void CPU::clockTick()

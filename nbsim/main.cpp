@@ -95,6 +95,8 @@ int main(int argc, char** argv)
     nanobrain.onLedRedWrite([&]   (uint16_t ledRed)   { w.onLedRedWrite(ledRed); });
     nanobrain.onHexWrite([&]   (int hex, uint16_t val)   { w.onHexWrite(hex, val); });
 
+    w.onResetButtonPressed([&] (bool pressed) { nanobrain.onResetButtonPressed(pressed); });
+
     // Boot cpu
 
     nanobrain.start();

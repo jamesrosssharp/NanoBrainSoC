@@ -105,3 +105,12 @@ void SimulatorWindow::onHexWrite(int hex, std::uint16_t val)
         m_hexVals[3 - hex] = val;
 }
 
+void SimulatorWindow::onResetPressed()
+{
+    m_onResetButton(true);
+}
+
+void SimulatorWindow::onResetReleased()
+{
+    m_onResetButton(false);
+}
