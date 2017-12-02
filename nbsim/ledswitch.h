@@ -37,6 +37,7 @@ public:
 
     void hardReset();
 
+
 private:
 
     std::uint16_t m_slideSwitches;

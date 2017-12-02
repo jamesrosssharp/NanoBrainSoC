@@ -1,4 +1,17 @@
         .org 0h
+vectors:
+reset:	
+	jump start
+	.align 4
+interrupt:
+	jump interruptHandler
+	.align 4
+exception:
+	jump exceptionHandler
+	.align 4
+svc_vector:
+	nop
+	nop
 
 start:
         // set up a stack
@@ -7,6 +20,22 @@ start:
         load r1, (StackEnd & 0xffff0000) >> 16
         ldspr s8, r0
 
+	// Configure interrupt controller
+
+	load r0, 0xb000
+	load r1, 0x0001
+	out  r1, r0
+
+	load r0, 0xb001
+	load r1, 0x0001
+	out  r1, r0
+
+	// enable interrupts
+
+	load r0, 1
+	load r1, 0
+	ldspr s0, r0
+	
         // Print banner
 
         load r0, (Banner & 0x0000ffff)
@@ -177,6 +206,12 @@ WaitLoop:
         test r1, 1  // TX_FIFO_FULL
         jumpnz WaitLoop
 
+	// disable counter
+
+	load r0,0
+	load r1,0xc000
+	out  r0,r1
+
         incw s8
         ldw  r1, [s8, 0]
         incw s8
@@ -190,17 +225,26 @@ Wait:
         stw r1, [s8, 0]
         decw s8
 
-	load r1,0x2
+	// Load counter load register
 
-Wait_WaitOuter:
-	load r0,0x00ff
-Wait_WaitInner:
-	sub r0, 1
-	jumpnz Wait_WaitInner
-	sub r1, 1
-	jumpnz Wait_WaitOuter
+	load r0, 0xffff
+	load r1, 0xc003
+	out  r0, r1
 
-        incw s8
+	// clear status
+
+	load r0, 1
+	load r1, 0xc001
+	out  r0, r1
+
+	// set counter enable, prescale and load
+	load r0, 0x5b
+	load r1, 0xc000
+	out  r0, r1
+
+	sleep
+
+	incw s8
         ldw  r1, [s8, 0]
         incw s8
         ldw  r0, [s8, 0]
@@ -252,6 +296,32 @@ OutHex:
         ldw  r0, [s8, 0]
 
         ret
+
+interruptHandler:
+	stw r0, [s8, 0]
+        decw s8
+        stw r1, [s8, 0]
+        decw s8
+
+	// Acknowledge all interrupts
+	load r0, 0xb002
+	load r1, 0xffff
+	out  r1, r0
+
+	// Acknowledge timer interrupt
+	load r0, 0
+	load r1, 0xc000
+	out  r0, r1
+
+	incw s8
+        ldw  r1, [s8, 0]
+        incw s8
+        ldw  r0, [s8, 0]
+
+	reti
+
+exceptionHandler:
+	rete
 
 /*====================== Data section =====================*/
 

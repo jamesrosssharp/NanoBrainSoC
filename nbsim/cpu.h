@@ -2,17 +2,19 @@
 
 #include "memory.h"
 #include "ioports.h"
+#include "iinterruptdelegate.h"
 
 #include <cstdint>
 #include <thread>
 #include <condition_variable>
 #include <mutex>
 
-class CPU
+class CPU   : public ICPUInterruptDelegate
 {
 public:
 
     CPU(Memory& mem, IOPorts& ioports);
+    ~CPU() {}
 
     void hardReset();
     void run();
@@ -22,6 +24,8 @@ public:
 
     void holdInReset(bool hold);
 
+    virtual void setIRQ(bool level) override;
+
 private:
 
     void clockTick();
@@ -29,10 +33,14 @@ private:
     void executeInstruction();
 
     const std::uint32_t SPR_MSR = 0;
-    const std::uint32_t MSR_IE  = 0;
-    const std::uint32_t MSR_EE  = 1;
+    const std::uint32_t MSR_IE  = 1 << 0;
+    const std::uint32_t MSR_EE  = 1 << 1;
 
     const std::uint32_t SPR_LR = 1;
+
+    const std::uint32_t SPR_ILR = 2;
+
+    const std::uint32_t SPR_VBAR = 5;
 
     std::uint32_t m_pc;
     std::uint16_t m_imm;
@@ -58,4 +66,6 @@ private:
 
     bool m_threadExit;
     volatile bool m_threadPause;
+
+    bool m_sleep;
 };

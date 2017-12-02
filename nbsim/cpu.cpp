@@ -17,9 +17,10 @@ CPU::CPU(Memory &mem, IOPorts& ioports) :
     m_ioports(ioports),
     m_cpuThread([] (CPU* cpu) { cpu->runThread(); }, this),
     m_threadExit(false),
-    m_threadPause(false)
+    m_threadPause(false),
+    m_sleep(false)
 {
-
+        m_ioports.setCPUInterruptDelegate(this);
 }
 
 void CPU::hardReset()
@@ -58,6 +59,22 @@ void CPU::shutDown()
     m_cpuThread.join();
 }
 
+void CPU::setIRQ(bool level)
+{
+    if (level)
+    {
+        m_interrupt = true;
+        // wake sleeping thread.
+        m_cond.notify_all();
+    }
+    else
+    {
+        m_interrupt = false;
+        // wake sleeping thread.
+        m_cond.notify_all();
+    }
+}
+
 void CPU::runThread()
 {
     {
@@ -72,6 +89,13 @@ void CPU::runThread()
             m_threadPause = false;
             std::unique_lock<std::mutex> lock(m_mutex);
             m_cond.wait(lock);
+        }
+
+        if (m_sleep)
+        {
+            std::unique_lock<std::mutex> lock(m_mutex);
+            m_cond.wait(lock);
+            m_sleep = false;
         }
 
         clockTick();
@@ -106,6 +130,14 @@ void CPU::clockTick()
 
     if (m_interrupt && (m_sprRegisters[SPR_MSR] & MSR_IE))
     {
+
+        std::uint32_t vbar = m_sprRegisters[SPR_VBAR];
+
+        std::uint32_t addr = vbar + 2; // interrupt vector
+
+        m_sprRegisters[SPR_ILR] = m_pc;
+        m_sprRegisters[SPR_MSR] &= ~MSR_IE; // disable further interrupts.
+        m_pc = addr;
 
     }
     else if (m_exception && (m_sprRegisters[SPR_MSR] & MSR_EE))
@@ -750,7 +782,7 @@ void CPU::executeInstruction()
         case UniqueOpCode::NOP:
             break;
         case UniqueOpCode::SLEEP:
-            pcNext = m_pc;
+            m_sleep = true;
             break;
         case UniqueOpCode::JUMP:
         {
@@ -928,7 +960,11 @@ void CPU::executeInstruction()
             break;
         }
         case UniqueOpCode::RETI:
+        {
+            m_sprRegisters[SPR_MSR] |= MSR_IE; // restore interrupts
+            pcNext = m_sprRegisters[SPR_ILR];
             break;
+        }
         case UniqueOpCode::RETE:
             break;
         case UniqueOpCode::LDW_REG:

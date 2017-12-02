@@ -3,7 +3,6 @@
 nbSoC::nbSoC() :
     m_cpu(m_memory, m_ioports)
 {
-
 }
 
 void nbSoC::configureBlockRam(std::string blockRamImg)
@@ -52,6 +51,7 @@ void nbSoC::start()
 void nbSoC::shutDown()
 {
     m_cpu.shutDown();
+    m_ioports.shutDown();
 }
 
 void nbSoC::onResetButtonPressed(bool pressed)

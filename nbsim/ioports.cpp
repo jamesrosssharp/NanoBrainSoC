@@ -6,6 +6,11 @@
 #define MAKE_PORT_NUM(x) ((x & 0xf000) >> 12)
 #define MAKE_PORT_REG(x) (x & 0xfff)
 
+IOPorts::IOPorts()
+{
+    m_timerCounter.setInterruptDelegate(&m_intCon);
+}
+
 std::uint16_t IOPorts::inPort(std::uint16_t port)
 {
 
@@ -25,7 +30,9 @@ std::uint16_t IOPorts::inPort(std::uint16_t port)
         case kPortFlashCon:
         case kPortKbdCon:
         case kPortIntCon:
+            return m_intCon.inPort(MAKE_PORT_REG(port));
         case kPortTimer:
+            return m_timerCounter.inPort(MAKE_PORT_REG(port));
         default:
             return 0;
     }
@@ -52,7 +59,11 @@ void          IOPorts::outPort(std::uint16_t port, std::uint16_t value)
         case kPortFlashCon:
         case kPortKbdCon:
         case kPortIntCon:
+            m_intCon.outPort(MAKE_PORT_REG(port), value);
+            break;
         case kPortTimer:
+            m_timerCounter.outPort(MAKE_PORT_REG(port), value);
+            break;
         default:
             break;
     }

@@ -284,25 +284,30 @@ void Statement::assemble(uint32_t &curAddress)
                 case OpCode::RET:
                 {
                     words.resize(1);
-                    words[0] =  0b1011111000000000;
+                    words[0] =  NB_RET_INSTRUCTION;
                     break;
                 }
                 case OpCode::RETI:
                 {
                     words.resize(1);
-                    words[0] =  0b1011111000000001;
+                    words[0] =  NB_RETI_INSTRUCTION;
                     break;
+                }
+                case OpCode::RETE:
+                {
+                    words.resize(1);
+                    words[0] = NB_RETE_INSTRUCTION;
                 }
                 case OpCode::NOP:
                 {
                     words.resize(1);
-                    words[0] =  0b0100011100000000;
+                    words[0] =  NB_NOP_INSTRUCTION;
                     break;
                 }
                 case OpCode::SLEEP:
                 {
                     words.resize(1);
-                    words[0] =  0b0100111100000000;
+                    words[0] =  NB_SLEEP_INSTRUCTION;
                     break;
                 }
                 default:
