@@ -10,11 +10,8 @@
 >   .-==-.           --===/\/\/\===---             ..--/\/\--..
 > ```
 
-#	NanoBrainSoC
+#	NanoBrain C compiler
 
-NanoBrain System-on-Chip. Includes RTL, C compiler, assembler, disassembler,
-simulator, and tool for converting assembled binaries into VHDL templates
-for use with Altera toolchains.
+Based on the babyc compiler: https://travis-ci.org/Wilfred/babyc
 
-Instantiates VHDL cores in the [VHDLCores](https://github.com/jamesrosssharp/VHDLCores) repository.
-
+Supports restricted subset of C11.

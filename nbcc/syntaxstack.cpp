@@ -10,20 +10,48 @@
 
     NanoBrain C Compiler (c) 2017 James Ross Sharp
 
-        Test C program to test compiler
 
 =============================================================================*/
 
-int a = 2;
-int b = 3;
+#include "syntaxstack.h"
 
-int sum(int a, int b)
+
+SyntaxStack::~SyntaxStack()
 {
-    return a + b;
+
+    for (Syntax::Syntagma *s : m_stack)
+        delete s;
 }
 
-int main ()
+void SyntaxStack::push(Syntax::Syntagma* syntagma)
 {
+    m_stack.push_back(syntagma);
+}
 
-    return sum(a, b);
+Syntax::Syntagma* SyntaxStack::pop()
+{
+   if (empty())
+       return nullptr;
+
+   Syntax::Syntagma* s = m_stack.back();
+   m_stack.pop_back();
+   return s;
+}
+
+Syntax::Syntagma*& SyntaxStack::peek()
+{
+    return m_stack.back();
+}
+
+bool SyntaxStack::isEmpty(SyntaxStack* stack)
+{
+    if (stack == nullptr)
+        return true;
+
+    return stack->empty();
+}
+
+bool SyntaxStack::empty()
+{
+    return m_stack.empty();
 }

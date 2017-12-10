@@ -10,20 +10,31 @@
 
     NanoBrain C Compiler (c) 2017 James Ross Sharp
 
-        Test C program to test compiler
 
 =============================================================================*/
 
-int a = 2;
-int b = 3;
+#pragma once
 
-int sum(int a, int b)
+#include "syntax.h"
+
+#include <deque>
+
+class SyntaxStack
 {
-    return a + b;
-}
+public:
 
-int main ()
-{
+    void push(Syntax::Syntagma* syntagma);
+    Syntax::Syntagma* pop();
+    Syntax::Syntagma*& peek();
 
-    return sum(a, b);
-}
+    static bool isEmpty(SyntaxStack* stack);
+    bool empty();
+
+    ~SyntaxStack();
+
+private:
+
+
+    std::deque<Syntax::Syntagma*> m_stack;
+
+};
