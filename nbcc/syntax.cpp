@@ -48,6 +48,12 @@ void Immediate::print(std::ostream &os, int indent) const
         case ImmediateType::Float:
             os << " FLOAT " << m_value.f;
             break;
+        case ImmediateType::CharLiteral:
+            os << " CHAR " << m_string;
+            break;
+        case ImmediateType::StringLiteral:
+            os << " STRING " << m_string;
+            break;
     }
 
     os << std::endl;
@@ -62,7 +68,15 @@ void Variable::print(std::ostream &os, int indent) const
     os << std::endl;
 
     m_varType->print(os, indent + 1);
+}
 
+void Symbol::print(std::ostream &os, int indent) const
+{
+    PrintIndent(os, indent);
+
+    os << "SYMBOL ";
+    os << m_symbol;
+    os << std::endl;
 }
 
 void UnaryExpression::print(std::ostream &os, int indent) const
@@ -138,6 +152,12 @@ void BinaryExpression::print(std::ostream &os, int indent) const
         case BinaryExpressionType::Subtraction:
             os << " - ";
             break;
+        case BinaryExpressionType::ShiftLeft:
+            os << " << ";
+            break;
+        case BinaryExpressionType::ShiftRight:
+            os << " << ";
+            break;
     }
 
     os << std::endl;
@@ -183,7 +203,7 @@ void FunctionDeclaration::print(std::ostream &os, int indent) const
 {
     PrintIndent(os, indent);
 
-    os << "FUNCTION_DECLARATION ";
+    os << "FUNCTION_DECLARATION " << m_functionName;
     os << std::endl;
 
     m_returnType->print(os, indent + 1);
@@ -192,6 +212,8 @@ void FunctionDeclaration::print(std::ostream &os, int indent) const
         m_attribute->print(os, indent + 1);
 
     m_arguments->print(os, indent + 1);
+
+    m_body->print(os, indent + 1);
 
 }
 
@@ -233,12 +255,15 @@ void VariableDeclaration::print(std::ostream &os, int indent) const
     os << "VARIABLE_DECLARATION ";
 
     os << m_decorator << " ";
-    os << m_vartype   << " ";
     os << m_varname   << " ";
 
     os << std::endl;
 
-    m_expression->print(os, indent + 1);
+    if (m_vartype != nullptr)
+        m_vartype->print(os, indent + 1);
+
+    if (m_vartype != nullptr)
+        m_expression->print(os, indent + 1);
 
 }
 
@@ -275,4 +300,73 @@ void Attribute::print(std::ostream &os, int indent) const
     PrintIndent(os, indent);
 
     os << "ATTRIBUTE " << m_attrib << std::endl;
+}
+
+void Decorator::print(std::ostream& os, int indent) const
+{
+    PrintIndent(os, indent);
+
+    switch (m_decoratorType)
+    {
+        case DecoratorType::Auto:
+            os << "AUTO" << std::endl;
+            break;
+        case DecoratorType::Const:
+            os << "CONST" << std::endl;
+            break;
+        case DecoratorType::Static:
+            os << "STATIC" << std::endl;
+            break;
+        case DecoratorType::Volatile:
+            os << "VOLATILE" << std::endl;
+            break;
+    }
+}
+
+void DecoratorList::print(std::ostream &os, int indent) const
+{
+     PrintIndent(os, indent);
+
+     os << "DECORATORS" << std::endl;
+
+     for (Decorator* d : m_decorators)
+         if (d != nullptr)
+             d->print(os, indent + 1);
+
+}
+
+void RegisterDescription::print(std::ostream &os, int indent) const
+{
+    PrintIndent(os, indent);
+
+    os << "REGISTER " << m_reg << "(" << m_symbol << ")" << std::endl;
+}
+
+void RegisterList::print(std::ostream &os, int indent) const
+{
+    PrintIndent(os, indent);
+
+    os << "REGISTER LIST" << std::endl;
+
+    for (RegisterDescription* r : m_registers)
+        if (r != nullptr)
+            r->print(os, indent + 1);
+}
+
+void AsmStatement::print(std::ostream &os, int indent) const
+{
+    PrintIndent(os, indent);
+
+    os << "ASM STATEMENT" << std::endl;
+
+    if (m_dl != nullptr)
+        m_dl->print(os, indent + 1);
+    if (m_stringLiteral != nullptr)
+        m_stringLiteral->print(os, indent + 1);
+    if (m_out != nullptr)
+        m_out->print(os, indent + 1);
+    if (m_in != nullptr)
+        m_in->print(os, indent + 1);
+    if (m_clobbers != nullptr)
+        m_clobbers->print(os, indent + 1);
 }

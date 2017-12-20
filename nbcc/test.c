@@ -14,16 +14,41 @@
 
 =============================================================================*/
 
-int a = 2;
-int b = 3;
+short a = 2;
+short b = 3;
 
-int sum(int a, int b)
+short sum(short a, short b)
 {
     return a + b;
 }
 
+void putch(char c)
+{
+    asm volatile (
+                    " load r1, 0 \n"
+                    " out  %1, r1 \n"
+                    :
+                    : "=r" (c)
+                );
+
+
+}
+
 int main ()
 {
+    putch('H');
+    putch('e');
+    putch('l');
+    putch('l');
+    putch('o');
 
-    return sum(a, b);
+    putch('0' + sum(a,b) << 2 - 1);
+
+    putch('\r');
+    putch('\n');
+
+    while (1)
+           ;
+
+
 }

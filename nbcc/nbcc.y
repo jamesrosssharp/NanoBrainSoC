@@ -21,6 +21,7 @@
 
 #include "syntaxstack.h"
 #include "syntax.h"
+#include "parsehandlers.h"
 
 extern "C" int yylex();
 extern "C" int yyparse();
@@ -30,9 +31,6 @@ extern int line_num;
 extern SyntaxStack g_syntaxStack;
 
 void yyerror(const char *s);
-
-void handleNewTopLevel();
-void pushType(const char* type);
 
 %}
 
@@ -44,222 +42,139 @@ void pushType(const char* type);
 }
 %error-verbose
 
-%token STR_LITERAL
-
 %token TYPE_INT TYPE_CHAR TYPE_SHORT TYPE_LONG
 %token TYPE_UNSIGNED_INT TYPE_UNSIGNED_CHAR TYPE_UNSIGNED_SHORT TYPE_UNSIGNED_LONG
+%token TYPE_VOID
 
-%token RETURN
+%token ASM VOLATILE CONST STATIC AUTO
+
+%token RETURN WHILE IF SWITCH CASE ELSE
 
 %token LEFT_BRACE RIGHT_BRACE
+
+%token SHIFT_LEFT SHIFT_RIGHT
 
 %token <integerLiteral> INT
 %token <hexLiteral>     HEXVAL
 %token <stringLiteral>  STRING
+%token <stringLiteral>  STR_LITERAL
+%token <stringLiteral>  CH_LITERAL
 %token <symbol>         SYMBOL
 
 %left '+'
+%left '-'
+%left '*'
+%left '/'
+%left SHIFT_RIGHT
+%left SHIFT_LEFT
 
 %%
 
-program: function program
-         {
-            handleNewTopLevel();
-         }
-         |
-         declaration program
-         {
-             handleNewTopLevel();
-         }
-         | ;
+program: function program    { handleNewTopLevel(); } |
+         declaration program { handleNewTopLevel(); } |
+                             ;
 
-function: type SYMBOL argument_list block
-        {
-            if (g_syntaxStack.empty())
-                throw std::runtime_error("Syntax stack empty trying to create a block");
+/* function declaration */
 
-            // block
-            Syntax::Syntagma* s = g_syntaxStack.pop();
+function: type SYMBOL argument_list block { handleFunctionDeclaration($2); } ;
 
-            if (s == nullptr || s->type() != Syntax::ElementType::Block)
-                throw std::runtime_error("Function without a block!");
+argument_list: '(' arguments ')'
 
-            // arguments
-            Syntax::FunctionArguments* arg = dynamic_cast<Syntax::FunctionArguments*>(g_syntaxStack.pop());
-
-            if (arg == nullptr)
-                throw std::runtime_error("Could not retrieve arguments from stack!");
-            // return type
-            Syntax::Type* type = dynamic_cast<Syntax::Type*>(g_syntaxStack.pop());
-
-            if (type == nullptr)
-                throw std::runtime_error("Could not retrieve type from stack!");
-
-            g_syntaxStack.push(new Syntax::FunctionDeclaration($2, nullptr, type, arg, s));
-
-        } ;
-
-argument_list: '(' arguments ')' {std::cout << "got argument list" << std::endl; } ;
-
-arguments: arguments ',' variable
-            {
-                if (g_syntaxStack.empty())
-                    throw std::runtime_error("Stack empty!");
-
-                Syntax::Syntagma* s = g_syntaxStack.pop();
-
-                if (s->type() != Syntax::ElementType::Variable)
-                    throw std::runtime_error("Expected variable!");
-
-                Syntax::FunctionArguments* a = dynamic_cast<Syntax::FunctionArguments*>(g_syntaxStack.pop());
-
-                if (a == nullptr)
-                    throw std::runtime_error("No argument list on stack!");
-
-                a->append(s);
-
-                g_syntaxStack.push(a);
-
-            }
-            |
-            variable
-            {
-                if (g_syntaxStack.empty())
-                    throw std::runtime_error("Stack empty!");
-
-                Syntax::Syntagma* s = g_syntaxStack.pop();
-
-                if (s->type() != Syntax::ElementType::Variable)
-                    throw std::runtime_error("Expected variable!");
-
-                Syntax::FunctionArguments* a = new Syntax::FunctionArguments();
-                a->append(s);
-
-                g_syntaxStack.push(a);
-            }
-            |
-            {
-                Syntax::FunctionArguments* a = new Syntax::FunctionArguments();
-
-                g_syntaxStack.push(a);
-            }
+arguments: arguments ',' variable { handleArguments1(); } |
+           variable               { handleArguments2(); } |
+                                  { handleArguments3(); }
             ;
 
-variable: type SYMBOL {
-                        Syntax::Syntagma* type = g_syntaxStack.pop();
+variable: type SYMBOL { handleVariable($2); } ;
 
-                        if (type->type() != Syntax::ElementType::Type)
-                            throw std::runtime_error("Expected type");
+/* block */
 
+block: LEFT_BRACE block_contents RIGHT_BRACE ;
 
-                        Syntax::Variable* v = new Syntax::Variable(type, $2);
+block_contents: block_contents statement { handleBlock1(); } |
+                block_contents block     { handleBlock2(); } |
+                                         { handleBlock3(); }
+                ;
 
-                        g_syntaxStack.push(v);
+/* statements */
 
-                      } ;
+statement: return_statement | while_statement | assigment | declaration | asm_block | expression ';' ;
 
+/* asm block */
 
-block: LEFT_BRACE block_contents RIGHT_BRACE
-                {
+asm_block: ASM decorators '(' string_literal ':' reglist ':' reglist ':' reglist ')' ';' { handleAsm1(); } |
+           ASM decorators '(' string_literal ':' reglist ':' reglist ')'             ';' { handleAsm2(); }
 
-                    Syntax::Block* b = new Syntax::Block();
+reglist:  reglist ',' reg { handleRegList1(); } | reg { handleRegList2(); } | { handleRegList3(); }
 
-                    g_syntaxStack.push(b);
-                } ;
+reg:    STR_LITERAL { handleReg1($1); } | STR_LITERAL '(' SYMBOL ')' { handleReg2($1,$3); }
 
-block_contents: block_contents statement | block_contents block | { std::cout << "got block contents" << std::endl; } ;
+decorators: decorators decorator { handleDecoratorList1(); } | decorator { handleDecoratorList2(); } | { handleDecoratorList3(); } ;
 
-statement: return_statement | declaration { std::cout << "got statement" << std::endl; } ;
+decorator: CONST    { handleDecorator(Syntax::DecoratorType::Const);     }    |
+           VOLATILE { handleDecorator(Syntax::DecoratorType::Volatile);  }    |
+           STATIC   { handleDecorator(Syntax::DecoratorType::Static);    }    |
+           AUTO     { handleDecorator(Syntax::DecoratorType::Auto);      }
 
-return_statement: RETURN expression ';' { std::cout << "return statement" << std::endl; };
+/* return */
 
-declaration:
-        type SYMBOL '=' expression ';' {std::cout << "got declaration" << std::endl; };
+return_statement: RETURN expression ';' { handleReturnStatement(); }
+
+/* while */
+
+while_statement: WHILE '(' expression ')' block ';' { handleWhile1(); } |
+                 WHILE '(' expression ')' ';'       { handleWhile2(); }
+
+/* assignment */
+
+assigment:      SYMBOL '=' expression ';'           { handleAssignment($1); }
+
+/* variable declaration */
+
+declaration:    type SYMBOL '=' expression ';'      { handleDeclaration($2); }
+
+/* expression */
 
 expression:
-        SYMBOL |
-        INT |
-        expression '+' expression |
-        SYMBOL parameter_list | /* function call */
-        { std::cout << "got expression" << std::endl; }
+        SYMBOL          { handleExpressionSymbol($1); }             |
+        INT             { handleExpressionIntImmediate($1); }       |
+        CH_LITERAL      { handleExpressionCharLiteral($1); }        |
+        expression '+' expression { handleExpressionAddition(); }   |
+        expression '-' expression { handleExpressionSubtraction(); }   |
+        expression '*' expression { handleExpressionMultiplication(); }   |
+        expression '/' expression { handleExpressionDivision(); }   |
+        expression SHIFT_LEFT expression { handleExpressionShiftLeft(); } |
+        expression SHIFT_RIGHT expression { handleExpressionShiftRight(); } |
+        SYMBOL parameter_list     { handleExpressionFunctionCall($1); }
         ;
+
+/* string literal - strings can be concatenated */
+
+string_literal: string_literal STR_LITERAL { handleStringLiteral1($2); } | STR_LITERAL { handleStringLiteral2($1); }
+
+/* parameters for function call */
 
 parameter_list: '(' parameters ')' ;
 
-parameters: parameters | parameter ',' parameter | parameter | ;
+parameters: parameters ',' parameter { handleParameter1(); }    |
+            parameter                { handleParameter2(); }    |
+                                     { handleParameter3(); }
 
 parameter: expression ;
 
-type: TYPE_INT
-      {
-        pushType("int");
-      }
-      |
-      TYPE_CHAR
-      {
-         pushType("char");
-      }
-      |
-      TYPE_SHORT
-      {
-          pushType("short");
-      }
-      |
-      TYPE_LONG
-      {
-          pushType("long");
-      }
-      |
-      TYPE_UNSIGNED_INT
-      {
-          pushType("uint");
-      }
-      |
-      TYPE_UNSIGNED_CHAR
-      {
-          pushType("uchar");
-      }
-      |
-      TYPE_UNSIGNED_SHORT
-      {
-          pushType("ushort");
-      }
-      |
-      TYPE_UNSIGNED_LONG
-      {
-          pushType("ulong");
-      }
+/* types */
 
+type: TYPE_INT   { pushType("int"); }  |
+      TYPE_CHAR  { pushType("char"); } |
+      TYPE_SHORT { pushType("short");} |
+      TYPE_LONG  { pushType("long"); } |
+      TYPE_UNSIGNED_INT   { pushType("uint");  } |
+      TYPE_UNSIGNED_CHAR  { pushType("uchar"); } |
+      TYPE_UNSIGNED_SHORT { pushType("ushort");} |
+      TYPE_UNSIGNED_LONG  { pushType("ulong"); } |
+      TYPE_VOID           { pushType("void");  }
 
 %%
-
-void handleNewTopLevel()
-{
-    Syntax::TopLevel* tl;
-    if (g_syntaxStack.empty())
-    {
-        tl = new Syntax::TopLevel();
-    }
-    else if (g_syntaxStack.peek()->type() != Syntax::ElementType::TopLevel)
-    {
-        tl = new Syntax::TopLevel();
-    }
-    else
-    {
-        tl = dynamic_cast<Syntax::TopLevel*>(g_syntaxStack.pop());
-        if (tl == nullptr)
-            throw std::runtime_error("Could not cast top level!");
-    }
-
-    tl->append(g_syntaxStack.pop());
-    g_syntaxStack.push(tl);
-}
-
-void pushType(const char *type)
-{
-    Syntax::Type* t = new Syntax::Type(type);
-    g_syntaxStack.push(t);
-}
 
 void yyerror(const char *s)
 {

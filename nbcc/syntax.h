@@ -28,6 +28,7 @@ namespace Syntax
         Type,
         Attribute,
         Variable,
+        Symbol,
         UnaryExpression,
         BinaryExpression,
         Assignment,
@@ -40,7 +41,12 @@ namespace Syntax
         WhileStatement,
         Block,
         Function,
-        TopLevel
+        TopLevel,
+        Decorator,
+        DecoratorList,
+        RegisterDescription,
+        RegisterList,
+        AsmStatement,
     };
 
     enum class UnaryExpressionType
@@ -54,7 +60,9 @@ namespace Syntax
     {
         Int,
         Uint,
-        Float
+        Float,
+        CharLiteral,
+        StringLiteral
     };
 
     enum class BinaryExpressionType
@@ -73,6 +81,16 @@ namespace Syntax
         LessThanOrEqual,
         GreaterThan,
         GreaterThanOrEqual,
+        ShiftLeft,
+        ShiftRight,
+    };
+
+    enum class DecoratorType
+    {
+        Const,
+        Volatile,
+        Static,
+        Auto
     };
 
     // Base class for all syntax units
@@ -99,6 +117,25 @@ namespace Syntax
             m_immType(ImmediateType::Int)
             { m_value.i = value; }
 
+        Immediate(char *string, bool isCharLiteral) :
+            Syntagma(ElementType::Assignment)
+            {
+                m_string = string;
+                if (isCharLiteral)
+                {
+                    m_immType = ImmediateType::CharLiteral;
+                }
+                else
+                {
+                    m_immType = ImmediateType::StringLiteral;
+                }
+            }
+
+        void append(char* string)
+        {
+            m_string += string;
+        }
+
         void print(std::ostream& os, int indent) const;
 
     private:
@@ -109,6 +146,8 @@ namespace Syntax
             unsigned int u;
             float f;
         } m_value;
+        std::string m_string;
+
     };
 
     class Type : public Syntagma
@@ -162,6 +201,23 @@ namespace Syntax
 
     private:
         Syntagma* m_varType;
+        std::string m_symbol;
+    };
+
+    class Symbol : public Syntagma
+    {
+    public:
+
+        Symbol(char* symbol)    :
+            Syntagma(ElementType::Symbol),
+            m_symbol(symbol)
+        {
+
+        }
+
+        void print(std::ostream &os, int indent) const;
+
+    private:
         std::string m_symbol;
     };
 
@@ -292,6 +348,7 @@ namespace Syntax
             delete m_arguments;
             delete m_attribute;
             delete m_returnType;
+            delete m_body;
         }
 
         void print(std::ostream& os, int indent) const;
@@ -381,7 +438,7 @@ namespace Syntax
     class VariableDeclaration : public Syntagma
     {
     public:
-        VariableDeclaration(char* varname, char* type, char* decorator, Syntagma* expression)    :
+        VariableDeclaration(char* varname, Syntagma* type, char* decorator, Syntagma* expression)    :
             Syntagma(ElementType::VariableDeclaration),
             m_varname(varname),
             m_vartype(type),
@@ -401,7 +458,7 @@ namespace Syntax
     private:
 
         std::string m_varname;
-        std::string m_vartype;
+        Syntagma* m_vartype;
         std::string m_decorator;    // e.g. auto, static, const
         Syntagma* m_expression;
 
@@ -457,6 +514,136 @@ namespace Syntax
     private:
 
         std::list<Syntagma*> m_declarations;
+
+    };
+
+
+    class Decorator : public Syntagma
+    {
+    public:
+        Decorator(DecoratorType type) :
+            Syntagma(ElementType::Decorator),
+            m_decoratorType(type)
+        {
+
+        }
+
+        void print(std::ostream& os, int indent) const;
+
+    private:
+
+        DecoratorType m_decoratorType;
+    };
+
+    class DecoratorList : public Syntagma
+    {
+    public:
+        DecoratorList() :
+            Syntagma(ElementType::DecoratorList)
+        {
+
+        }
+
+        ~DecoratorList()
+        {
+            for (Decorator* d : m_decorators)
+                delete d;
+        }
+
+        void print(std::ostream &os, int indent) const;
+
+        void append(Decorator* dec)
+        {
+            m_decorators.push_back(dec);
+        }
+
+    private:
+        std::list<Decorator*> m_decorators;
+
+    };
+
+    class RegisterDescription : public Syntagma
+    {
+    public:
+        RegisterDescription(char* reg, char* sym)   :
+            Syntagma(ElementType::RegisterDescription),
+            m_reg(reg),
+            m_symbol(sym)
+        {
+
+        }
+
+        void print(std::ostream &os, int indent) const;
+
+    private:
+
+        std::string m_reg;
+        std::string m_symbol;
+
+    };
+
+    class RegisterList : public Syntagma
+    {
+    public:
+        RegisterList() :
+            Syntagma(ElementType::RegisterList)
+        {
+
+        }
+
+        ~RegisterList()
+        {
+            for (RegisterDescription* r : m_registers)
+                if (r != nullptr)
+                    delete r;
+        }
+
+        void print(std::ostream &os, int indent) const;
+
+        void append(RegisterDescription* desc)
+        {
+            m_registers.push_back(desc);
+        }
+
+    private:
+
+        std::list<RegisterDescription*> m_registers;
+
+    };
+
+    class AsmStatement : public Syntagma
+    {
+    public:
+
+        AsmStatement(DecoratorList* dl, Immediate* sl, RegisterList* out, RegisterList* in, RegisterList* clobbers) :
+            Syntagma(ElementType::AsmStatement),
+            m_dl(dl),
+            m_stringLiteral(sl),
+            m_out(out),
+            m_in(in),
+            m_clobbers(clobbers)
+        {
+
+        }
+
+        ~AsmStatement()
+        {
+            delete m_dl;
+            delete m_stringLiteral;
+            delete m_out;
+            delete m_in;
+            delete m_clobbers;
+        }
+
+        void print(std::ostream &os, int indent) const;
+
+    private:
+
+        DecoratorList* m_dl;
+        Immediate*     m_stringLiteral;
+        RegisterList*  m_out;
+        RegisterList*  m_in;
+        RegisterList*  m_clobbers;
 
     };
 
