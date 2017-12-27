@@ -20,6 +20,7 @@
 
 #include "syntaxstack.h"
 #include "syntax.h"
+#include "codegenerator.h"
 
 extern "C" int yylex();
 extern "C" int yyparse();
@@ -95,6 +96,18 @@ int main(int argc, char** argv) {
 
     std::cout << "Abstract syntax tree: " << std::endl;
     std::cout << *s << std::endl;
+
+    std::cout << "Generating code: " << std::endl;
+    std::cout << "==================================================" << std::endl;
+
+    CodeGen::CodeGenerator g(s);
+
+    g.generate();
+
+    std::cout << "==================================================" << std::endl;
+
+    std::cout << "Cleaning up " << std::endl;
+    delete s;
 
 }
 

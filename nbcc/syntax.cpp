@@ -254,10 +254,12 @@ void VariableDeclaration::print(std::ostream &os, int indent) const
 
     os << "VARIABLE_DECLARATION ";
 
-    os << m_decorator << " ";
     os << m_varname   << " ";
 
     os << std::endl;
+
+    if (m_decorator != nullptr)
+        m_decorator->print(os, indent + 1);
 
     if (m_vartype != nullptr)
         m_vartype->print(os, indent + 1);
@@ -369,4 +371,14 @@ void AsmStatement::print(std::ostream &os, int indent) const
         m_in->print(os, indent + 1);
     if (m_clobbers != nullptr)
         m_clobbers->print(os, indent + 1);
+}
+
+void GroupedExpression::print(std::ostream &os, int indent) const
+{
+    PrintIndent(os, indent);
+
+    os << "GROUPING" << std::endl;
+
+    if (m_expression != nullptr)
+        m_expression->print(os, indent + 1);
 }

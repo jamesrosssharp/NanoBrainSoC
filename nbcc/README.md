@@ -14,4 +14,7 @@
 
 Based on the babyc compiler: https://travis-ci.org/Wilfred/babyc
 
-Supports restricted subset of C11.
+Supports very restricted subset of C99.
+
+Written in C++11, so compiler can't compile itself (the NanoBrain SoC
+platform doesn't need a native compiler so it's not necessary.)

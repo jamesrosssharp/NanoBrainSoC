@@ -10,45 +10,37 @@
 
     NanoBrain C Compiler (c) 2017 James Ross Sharp
 
-        Test C program to test compiler
+    Notes
+    =====
+
+    Intermediate representation, use for compiling expressions into
+    a form which can be optimised to ensure CPU pipeline is utilised
+    to optimal capacity etc.
 
 =============================================================================*/
 
-short a = 2;
-short b = 3;
+#pragma once
 
-short sum(short a, short b)
+#include <iostream>
+
+namespace IntRep
 {
-    return a + b;
+    class IntRep;
 }
 
-/*void putch(char c)
+std::ostream& operator << (std::ostream& os, const IntRep::IntRep& i);
+
+namespace IntRep
 {
-    asm volatile (
-                    " load r1, 0 \n"
-                    " out  %1, r1 \n"
-                    :
-                    : "=r" (c)
-                );
+
+    class IntRep
+    {
+    public:
 
 
-}*/
+        friend std::ostream& (::operator <<) (std::ostream& os, const IntRep& i);
 
-short main ()
-{
-/*    putch('H');
-    putch('e');
-    putch('l');
-    putch('l');
-    putch('o');
+    };
 
-    putch('0' + sum(a,b) << 2 - 1);
-
-    putch('\r');
-    putch('\n');
-
-    while (1)
-           ;*/
-
-    return sum(a,b);
 }
+

@@ -19,34 +19,37 @@
 #include <list>
 #include <ostream>
 
+extern int line_num;
+
 namespace Syntax
 {
 
     enum class ElementType
     {
-        Immediate,
-        Type,
-        Attribute,
-        Variable,
-        Symbol,
-        UnaryExpression,
-        BinaryExpression,
-        Assignment,
-        ReturnStatement,
-        FunctionArguments,
-        FunctionDeclaration,
-        FunctionCall,
-        IfStatement,
-        VariableDeclaration,
-        WhileStatement,
-        Block,
-        Function,
-        TopLevel,
-        Decorator,
-        DecoratorList,
-        RegisterDescription,
-        RegisterList,
-        AsmStatement,
+        Immediate               = 0,
+        Type                    = 1,
+        Attribute               = 2,
+        Variable                = 3,
+        Symbol                  = 4,
+        UnaryExpression         = 5,
+        BinaryExpression        = 6,
+        Assignment              = 7,
+        ReturnStatement         = 8,
+        FunctionArguments       = 9,
+        FunctionDeclaration     = 10,
+        FunctionCall            = 11,
+        IfStatement             = 12,
+        VariableDeclaration     = 13,
+        WhileStatement          = 14,
+        Block                   = 15,
+        Function                = 16,
+        TopLevel                = 17,
+        Decorator               = 18,
+        DecoratorList           = 19,
+        RegisterDescription     = 20,
+        RegisterList            = 21,
+        AsmStatement            = 22,
+        GroupedExpression       = 23,
     };
 
     enum class UnaryExpressionType
@@ -98,14 +101,17 @@ namespace Syntax
     {
     public:
         virtual ~Syntagma() {}
-        Syntagma(ElementType type) : m_type(type) {}
+        Syntagma(ElementType type) : m_type(type), m_linenum(line_num) {}
 
         virtual ElementType type() const { return m_type; }
+
+        int linenum() const { return m_linenum; }
 
         virtual void print(std::ostream& os, int indent) const = 0;
 
     protected:
         ElementType m_type;
+        int m_linenum;
 
     };
 
@@ -113,12 +119,12 @@ namespace Syntax
     {
     public:
         Immediate(int value) :
-            Syntagma(ElementType::Assignment),
+            Syntagma(ElementType::Immediate),
             m_immType(ImmediateType::Int)
             { m_value.i = value; }
 
         Immediate(char *string, bool isCharLiteral) :
-            Syntagma(ElementType::Assignment)
+            Syntagma(ElementType::Immediate)
             {
                 m_string = string;
                 if (isCharLiteral)
@@ -137,6 +143,11 @@ namespace Syntax
         }
 
         void print(std::ostream& os, int indent) const;
+
+        ImmediateType immType() const { return m_immType; }
+
+        int intValue() const { return m_value.i; }
+        unsigned int uintValue() const { return m_value.u; }
 
     private:
         ImmediateType m_immType;
@@ -161,6 +172,8 @@ namespace Syntax
         }
 
         void print(std::ostream &os, int indent) const;
+
+        const std::string& typeName() const { return m_typeName; }
 
     private:
         std::string m_typeName;
@@ -190,7 +203,7 @@ namespace Syntax
         //  Variable types are passed as strings since we need to allow for user defined
         //  type defs.
         //
-        Variable(Syntagma* variableType, char* symbol) :
+        Variable(Type* variableType, char* symbol) :
             Syntagma(ElementType::Variable),
             m_varType(variableType),
             m_symbol(symbol) {}
@@ -199,8 +212,12 @@ namespace Syntax
 
         void print(std::ostream& os, int indent) const;
 
+        const Syntax::Type* varType() const { return m_varType; }
+
+        const std::string& name() const { return m_symbol; }
+
     private:
-        Syntagma* m_varType;
+        Type* m_varType;
         std::string m_symbol;
     };
 
@@ -216,6 +233,8 @@ namespace Syntax
         }
 
         void print(std::ostream &os, int indent) const;
+
+        const std::string& symbol() const { return m_symbol; }
 
     private:
         std::string m_symbol;
@@ -254,6 +273,10 @@ namespace Syntax
             delete m_left;
             delete m_right;
         }
+
+        const Syntagma* right() const { return m_right; }
+        const Syntagma* left() const { return m_left; }
+        BinaryExpressionType binaryExpressionType() const  { return m_expressionType; }
 
         void print(std::ostream& os, int indent) const;
 
@@ -297,6 +320,8 @@ namespace Syntax
             delete m_expression;
         }
 
+        const Syntax::Syntagma* expression() const { return m_expression; }
+
         void print(std::ostream& os, int indent) const;
 
     private:
@@ -324,64 +349,10 @@ namespace Syntax
         }
 
         void print(std::ostream& os, int indent) const;
+        const std::list<Syntagma*>& arguments() const { return m_arguments; }
 
     private:
         std::list<Syntagma*> m_arguments;
-    };
-
-    class FunctionDeclaration : public Syntagma
-    {
-    public:
-        FunctionDeclaration(char* function, Syntagma* attribute, Syntagma* returnType, FunctionArguments* arguments, Syntagma* block)   :
-            Syntagma(ElementType::FunctionDeclaration),
-            m_functionName(function),
-            m_attribute(attribute),
-            m_returnType(returnType),
-            m_arguments(arguments),
-            m_body(block)
-        {
-
-        }
-
-        virtual ~FunctionDeclaration()
-        {
-            delete m_arguments;
-            delete m_attribute;
-            delete m_returnType;
-            delete m_body;
-        }
-
-        void print(std::ostream& os, int indent) const;
-
-    protected:
-        std::string m_functionName;
-        Syntagma* m_attribute;
-        Syntagma* m_returnType;
-        FunctionArguments* m_arguments;
-        Syntagma* m_body;
-    };
-
-    class FunctionCall : public Syntagma
-    {
-    public:
-        FunctionCall(char* function, FunctionArguments* arguments)  :
-            Syntagma(ElementType::FunctionCall),
-            m_functionName(function),
-            m_arguments(arguments)
-        {
-
-        }
-
-        virtual ~FunctionCall()
-        {
-            delete m_arguments;
-        }
-
-        void print(std::ostream& os, int indent) const;
-
-    protected:
-        std::string m_functionName;
-        FunctionArguments* m_arguments;
     };
 
     class Block : public Syntagma
@@ -406,10 +377,75 @@ namespace Syntax
 
         void print(std::ostream& os, int indent) const;
 
+        const std::list<Syntagma*>& statements() const { return m_statements; }
+
     private:
         std::list<Syntagma*> m_statements;
 
     };
+
+    class FunctionDeclaration : public Syntagma
+    {
+    public:
+        FunctionDeclaration(char* function, Syntagma* attribute, Syntagma* returnType, FunctionArguments* arguments, Block* block)   :
+            Syntagma(ElementType::FunctionDeclaration),
+            m_functionName(function),
+            m_attribute(attribute),
+            m_returnType(returnType),
+            m_arguments(arguments),
+            m_body(block)
+        {
+
+        }
+
+        virtual ~FunctionDeclaration()
+        {
+            delete m_arguments;
+            delete m_attribute;
+            delete m_returnType;
+            delete m_body;
+        }
+
+        void print(std::ostream& os, int indent) const;
+
+        const std::string& functionName() const { return m_functionName; }
+        const FunctionArguments* arguments() const { return m_arguments; }
+        const Block* body() const { return m_body; }
+
+    protected:
+        std::string m_functionName;
+        Syntagma* m_attribute;
+        Syntagma* m_returnType;
+        FunctionArguments* m_arguments;
+        Block* m_body;
+    };
+
+    class FunctionCall : public Syntagma
+    {
+    public:
+        FunctionCall(char* function, FunctionArguments* arguments)  :
+            Syntagma(ElementType::FunctionCall),
+            m_functionName(function),
+            m_arguments(arguments)
+        {
+
+        }
+
+        virtual ~FunctionCall()
+        {
+            delete m_arguments;
+        }
+
+        void print(std::ostream& os, int indent) const;
+
+        const std::string& functionName() const { return m_functionName; }
+        const FunctionArguments* arguments() const { return m_arguments; }
+
+    protected:
+        std::string m_functionName;
+        FunctionArguments* m_arguments;
+    };
+
 
     class IfStatement : public Syntagma
     {
@@ -435,10 +471,61 @@ namespace Syntax
         Syntagma* m_block;
     };
 
+    class Decorator : public Syntagma
+    {
+    public:
+        Decorator(DecoratorType type) :
+            Syntagma(ElementType::Decorator),
+            m_decoratorType(type)
+        {
+
+        }
+
+        void print(std::ostream& os, int indent) const;
+
+        DecoratorType decoratorType() const { return m_decoratorType; }
+
+    private:
+
+        DecoratorType m_decoratorType;
+    };
+
+    class DecoratorList : public Syntagma
+    {
+    public:
+        DecoratorList() :
+            Syntagma(ElementType::DecoratorList)
+        {
+
+        }
+
+        ~DecoratorList()
+        {
+            for (Decorator* d : m_decorators)
+                delete d;
+        }
+
+        void print(std::ostream &os, int indent) const;
+
+        void append(Decorator* dec)
+        {
+            m_decorators.push_back(dec);
+        }
+
+        const std::list<Decorator*>& decorators() const
+        {
+            return m_decorators;
+        }
+
+    private:
+        std::list<Decorator*> m_decorators;
+
+    };
+
     class VariableDeclaration : public Syntagma
     {
     public:
-        VariableDeclaration(char* varname, Syntagma* type, char* decorator, Syntagma* expression)    :
+        VariableDeclaration(char* varname, Type* type, DecoratorList* decorator, Syntagma* expression)    :
             Syntagma(ElementType::VariableDeclaration),
             m_varname(varname),
             m_vartype(type),
@@ -455,11 +542,16 @@ namespace Syntax
 
         void print(std::ostream& os, int indent) const;
 
+        const Type* vartype() const { return m_vartype; }
+        const std::string& name() const { return m_varname; }
+        const DecoratorList* decorator() const { return m_decorator; }
+        const Syntagma* expression() const { return m_expression; }
+
     private:
 
         std::string m_varname;
-        Syntagma* m_vartype;
-        std::string m_decorator;    // e.g. auto, static, const
+        Type* m_vartype;
+        DecoratorList* m_decorator;    // e.g. auto, static, const
         Syntagma* m_expression;
 
     };
@@ -509,6 +601,8 @@ namespace Syntax
             m_declarations.push_front(s);
         }
 
+        const std::list<Syntagma*>& declarations() const { return m_declarations; }
+
         void print(std::ostream& os, int indent) const;
 
     private:
@@ -518,49 +612,6 @@ namespace Syntax
     };
 
 
-    class Decorator : public Syntagma
-    {
-    public:
-        Decorator(DecoratorType type) :
-            Syntagma(ElementType::Decorator),
-            m_decoratorType(type)
-        {
-
-        }
-
-        void print(std::ostream& os, int indent) const;
-
-    private:
-
-        DecoratorType m_decoratorType;
-    };
-
-    class DecoratorList : public Syntagma
-    {
-    public:
-        DecoratorList() :
-            Syntagma(ElementType::DecoratorList)
-        {
-
-        }
-
-        ~DecoratorList()
-        {
-            for (Decorator* d : m_decorators)
-                delete d;
-        }
-
-        void print(std::ostream &os, int indent) const;
-
-        void append(Decorator* dec)
-        {
-            m_decorators.push_back(dec);
-        }
-
-    private:
-        std::list<Decorator*> m_decorators;
-
-    };
 
     class RegisterDescription : public Syntagma
     {
@@ -645,6 +696,28 @@ namespace Syntax
         RegisterList*  m_in;
         RegisterList*  m_clobbers;
 
+    };
+
+    class GroupedExpression : public Syntagma
+    {
+    public:
+
+        GroupedExpression(Syntax::Syntagma* expression) :
+            Syntagma(ElementType::GroupedExpression),
+            m_expression(expression)
+        { }
+
+        ~GroupedExpression()
+        {
+            delete m_expression;
+        }
+
+        void print(std::ostream &os, int indent) const;
+
+        const Syntax::Syntagma* expression() const { return m_expression; }
+
+    private:
+        Syntax::Syntagma* m_expression;
     };
 
     void PrintIndent(std::ostream& os, int indent);

@@ -1,7 +1,8 @@
 project(nbcc)
 cmake_minimum_required(VERSION 2.8)
 
-set(SRC_LIST nbcc.y nbcc.l main.cpp syntaxstack.cpp syntax.cpp parsehandlers.cpp)
+set(SRC_LIST nbcc.y nbcc.l main.cpp syntaxstack.cpp syntax.cpp parsehandlers.cpp
+             codegenerator.cpp expression.cpp codegendefs.h intrep.cpp)
 
 set (CMAKE_CXX_STANDARD 11)
 

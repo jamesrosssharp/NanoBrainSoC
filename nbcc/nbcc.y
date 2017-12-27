@@ -143,9 +143,10 @@ expression:
         expression '-' expression { handleExpressionSubtraction(); }   |
         expression '*' expression { handleExpressionMultiplication(); }   |
         expression '/' expression { handleExpressionDivision(); }   |
-        expression SHIFT_LEFT expression { handleExpressionShiftLeft(); } |
-        expression SHIFT_RIGHT expression { handleExpressionShiftRight(); } |
-        SYMBOL parameter_list     { handleExpressionFunctionCall($1); }
+        expression SHIFT_LEFT expression    { handleExpressionShiftLeft(); } |
+        expression SHIFT_RIGHT expression   { handleExpressionShiftRight(); } |
+        '(' expression ')'                  { handleGroupedExpression(); } |
+        SYMBOL parameter_list               { handleExpressionFunctionCall($1); }
         ;
 
 /* string literal - strings can be concatenated */

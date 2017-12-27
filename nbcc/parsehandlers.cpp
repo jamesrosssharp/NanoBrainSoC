@@ -33,9 +33,9 @@ void handleFunctionDeclaration(char* name)
         throw std::runtime_error("Syntax stack empty trying to create a block");
 
     // block
-    Syntax::Syntagma* s = g_syntaxStack.pop();
+    Syntax::Block* s = dynamic_cast<Syntax::Block*>(g_syntaxStack.pop());
 
-    if (s == nullptr || s->type() != Syntax::ElementType::Block)
+    if (s == nullptr)
         throw std::runtime_error("Function without a block!");
 
     // arguments
@@ -99,11 +99,10 @@ void handleArguments3()
 
 void handleVariable(char* name)
 {
-    Syntax::Syntagma* type = g_syntaxStack.pop();
+    Syntax::Type* type = dynamic_cast<Syntax::Type*>(g_syntaxStack.pop());
 
-    if (type->type() != Syntax::ElementType::Type)
+    if (type == nullptr)
         throw std::runtime_error("Expected type");
-
 
     Syntax::Variable* v = new Syntax::Variable(type, name);
 
@@ -196,10 +195,16 @@ void handleDeclaration(char* symbol)
 {
     Syntax::Syntagma* expression = g_syntaxStack.pop();
 
-    Syntax::Syntagma* type = g_syntaxStack.pop();
+    Syntax::Type* type = dynamic_cast<Syntax::Type*>(g_syntaxStack.pop());
+    if (type == nullptr)
+        throw std::runtime_error("Could not pop type from syntax stack!");
 
-    // to do
-    Syntax::VariableDeclaration* varDec = new Syntax::VariableDeclaration(symbol, type, (char*)"auto", expression);
+    // TODO: Add additional declarations which specify the decorator
+    Syntax::DecoratorList* deco = new Syntax::DecoratorList;
+    Syntax::Decorator*     d    = new Syntax::Decorator(Syntax::DecoratorType::Auto);
+    deco->append(d);
+
+    Syntax::VariableDeclaration* varDec = new Syntax::VariableDeclaration(symbol, type, deco, expression);
 
     g_syntaxStack.push(varDec);
 
@@ -530,4 +535,13 @@ void handleRegList3()
 
     g_syntaxStack.push(rl);
 
+}
+
+void handleGroupedExpression()
+{
+    Syntax::Syntagma* expression = g_syntaxStack.pop();
+
+    Syntax::GroupedExpression* g = new Syntax::GroupedExpression(expression);
+
+    g_syntaxStack.push(g);
 }
