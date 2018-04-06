@@ -1,5 +1,7 @@
 #pragma once
 
+#include "types.h"
+
 #include <iostream>
 #include <sstream>
 #include <deque>
@@ -12,20 +14,6 @@
 
 namespace CodeGen
 {
-
-    enum class BuiltInType
-    {
-        kInt,
-        kUInt,
-        kShort,
-        kUShort,
-        kChar,
-        kUChar,
-        kLong,
-        kULong,
-        kVoid,
-        kCustom
-    };
 
     struct Type
     {
@@ -98,37 +86,44 @@ inline std::ostream& operator << (std::ostream& os, const CodeGen::Type& t)
 {
     switch (t.type)
     {
-        case CodeGen::BuiltInType::kInt:
+        case BuiltInType::kInt:
             os << "int";
             break;
-        case CodeGen::BuiltInType::kChar:
+        case BuiltInType::kChar:
             os << "char";
             break;
-        case CodeGen::BuiltInType::kLong:
+        case BuiltInType::kLong:
             os << "long";
             break;
-        case CodeGen::BuiltInType::kShort:
+        case BuiltInType::kShort:
             os << "short";
             break;
-        case CodeGen::BuiltInType::kUInt:
+        case BuiltInType::kUInt:
             os << "unsigned int";
             break;
-        case CodeGen::BuiltInType::kUChar:
+        case BuiltInType::kUChar:
             os << "unsigned char";
             break;
-        case CodeGen::BuiltInType::kULong:
+        case BuiltInType::kULong:
             os << "unsigned long";
             break;
-        case CodeGen::BuiltInType::kUShort:
+        case BuiltInType::kUShort:
             os << "unsigned short";
             break;
-        case CodeGen::BuiltInType::kVoid:
+        case BuiltInType::kVoid:
             os << "void";
             break;
-        case CodeGen::BuiltInType::kCustom:
+        case BuiltInType::kCustom:
             os << t.name;
             break;
     }
+
+    return os;
+}
+
+inline std::ostream& operator << (std::ostream& os, const CodeGen::Variable& v)
+{
+    os << v.name << "|" << v.asmName << std::endl;
 
     return os;
 }

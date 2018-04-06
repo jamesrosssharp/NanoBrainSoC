@@ -15,6 +15,8 @@
 
 #pragma once
 
+#include "types.h"
+
 #include <string>
 #include <list>
 #include <ostream>
@@ -57,15 +59,6 @@ namespace Syntax
         LogicalNot,
         BitwiseNot,
         Negation
-    };
-
-    enum class ImmediateType
-    {
-        Int,
-        Uint,
-        Float,
-        CharLiteral,
-        StringLiteral
     };
 
     enum class BinaryExpressionType
@@ -120,7 +113,7 @@ namespace Syntax
     public:
         Immediate(int value) :
             Syntagma(ElementType::Immediate),
-            m_immType(ImmediateType::Int)
+            m_immType(ImmediateType::kInt)
             { m_value.i = value; }
 
         Immediate(char *string, bool isCharLiteral) :
@@ -129,11 +122,11 @@ namespace Syntax
                 m_string = string;
                 if (isCharLiteral)
                 {
-                    m_immType = ImmediateType::CharLiteral;
+                    m_immType = ImmediateType::kChar;
                 }
                 else
                 {
-                    m_immType = ImmediateType::StringLiteral;
+                    m_immType = ImmediateType::kStringLiteral;
                 }
             }
 

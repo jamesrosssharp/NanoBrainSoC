@@ -39,19 +39,19 @@ void Immediate::print(std::ostream &os, int indent) const
 
     switch (m_immType)
     {
-        case ImmediateType::Int:
+        case ImmediateType::kInt:
             os << " INT " << m_value.i;
             break;
-        case ImmediateType::Uint:
+        case ImmediateType::kUInt:
             os << " UINT " << m_value.u;
             break;
-        case ImmediateType::Float:
+        case ImmediateType::kFloat:
             os << " FLOAT " << m_value.f;
             break;
-        case ImmediateType::CharLiteral:
+        case ImmediateType::kChar:
             os << " CHAR " << m_string;
             break;
-        case ImmediateType::StringLiteral:
+        case ImmediateType::kStringLiteral:
             os << " STRING " << m_string;
             break;
     }

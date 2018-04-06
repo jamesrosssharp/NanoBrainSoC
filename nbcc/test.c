@@ -17,10 +17,10 @@
 short a = 2;
 short b = 3;
 
-short sum(short a, short b)
+/*short sum(short a, short b)
 {
     return a + b;
-}
+}*/
 
 /*void putch(char c)
 {
@@ -33,6 +33,11 @@ short sum(short a, short b)
 
 
 }*/
+
+short myfunc()
+{
+    return 2 + 3;
+}
 
 short main ()
 {
@@ -50,5 +55,7 @@ short main ()
     while (1)
            ;*/
 
-    return sum(a,b);
+    /*return sum(a,b);*/
+
+    return myfunc();
 }

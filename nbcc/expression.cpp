@@ -23,6 +23,7 @@
 =============================================================================*/
 
 #include "expression.h"
+#include "expressionhelper.h"
 
 using namespace Expr;
 
@@ -39,12 +40,14 @@ void Expression::fromSyntaxTree(const Syntax::Syntagma* expression)
 
             ExpressionElement e;
             e.elem = ElementType::kLeftParenthesis;
+            e.line_num = expression->linenum();
 
             m_elements.push_back(e);
 
             fromSyntaxTree(g->expression());
 
             e.elem = ElementType::kRightParenthesis;
+            e.line_num = expression->linenum();
 
             m_elements.push_back(e);
 
@@ -57,6 +60,7 @@ void Expression::fromSyntaxTree(const Syntax::Syntagma* expression)
 
             ExpressionElement e;
             e.elem = ElementType::kFunctionCall;
+            e.line_num = expression->linenum();
 
             e.functionName = f->functionName();
 
@@ -79,11 +83,12 @@ void Expression::fromSyntaxTree(const Syntax::Syntagma* expression)
 
             ExpressionElement e;
             e.elem = ElementType::kLiteral;
+            e.line_num = expression->linenum();
 
             switch(imm->immType())
             {
-                case Syntax::ImmediateType::Int:
-                    e.type.type = CodeGen::BuiltInType::kInt;
+                case ImmediateType::kInt:
+                    e.type.type = BuiltInType::kInt;
                     e.v.sval = imm->intValue();
                     break;
                 default:
@@ -101,6 +106,7 @@ void Expression::fromSyntaxTree(const Syntax::Syntagma* expression)
             ExpressionElement e;
 
             e.elem = ElementType::kSymbol;
+            e.line_num = expression->linenum();
 
             e.symbol = sym->symbol();
 
@@ -123,6 +129,7 @@ void Expression::fromSyntaxTree(const Syntax::Syntagma* expression)
             // create the element corresponding to this node
 
             ExpressionElement e;
+            e.line_num = expression->linenum();
 
             convertExpressionType(e, be->binaryExpressionType());
 
@@ -215,16 +222,16 @@ std::ostream& operator << (std::ostream& os, const ExpressionElement& elem)
         {
             switch (elem.type.type)
             {
-                case CodeGen::BuiltInType::kInt:
-                case CodeGen::BuiltInType::kShort:
-                case CodeGen::BuiltInType::kLong:
-                case CodeGen::BuiltInType::kChar:
+                case BuiltInType::kInt:
+                case BuiltInType::kShort:
+                case BuiltInType::kLong:
+                case BuiltInType::kChar:
                     os << elem.v.sval;
                     break;
-                case CodeGen::BuiltInType::kUInt:
-                case CodeGen::BuiltInType::kUShort:
-                case CodeGen::BuiltInType::kULong:
-                case CodeGen::BuiltInType::kUChar:
+                case BuiltInType::kUInt:
+                case BuiltInType::kUShort:
+                case BuiltInType::kULong:
+                case BuiltInType::kUChar:
                     os << elem.v.uval;
                     break;
             }
@@ -278,7 +285,7 @@ bool Expression::reduceToConstant(CodeGen::Variable& vout)
 
     switch (e.m_elements[0].type.type)
     {
-        case CodeGen::BuiltInType::kInt:
+        case BuiltInType::kInt:
             vout.initialValue.i = e.m_elements[0].v.sval;
             break;
         default:
@@ -298,5 +305,166 @@ bool Expression::_reduceToConstant()
 
 IntRep::IntRep Expression::generateIntRep()
 {
-    return {};
+    // call the recursive parser
+
+    Expression e = _generateIntRep();
+
+    // The returned expression *should* consist of a single element with all the generated
+    // int rep stitched together
+
+    ExpressionElement elem = e.getFinalElement();
+
+    return elem.intRep;
 }
+
+
+Expression Expression::_generateIntRep()
+{
+
+    // Search for sub expressions and evaluate them
+
+    Expression  e, sube;
+    uint32_t     stackDepth = 0;
+    Expression* curExp = &e;
+
+    for (ExpressionElement& elem : m_elements)
+    {
+        switch (elem.elem)
+        {
+            case ElementType::kLeftParenthesis:
+                if (stackDepth = 0)
+                {
+                    curExp = &sube;
+                    sube.reset();
+                }
+                else
+                {
+                    curExp->addElement(elem);
+                }
+                stackDepth++;
+                break;
+            case ElementType::kRightParenthesis:
+                if (stackDepth == 0)
+                {
+                    std::stringstream ss;
+                    ss << "unbalanced parenthesis, on line " << elem.line_num << std::endl;
+                    throw std::runtime_error(ss.str());
+                }
+
+                stackDepth --;
+
+                if (stackDepth == 0)
+                {
+                    curExp = &e;
+
+                    // Recursively evaluate the sube
+
+                    Expression subeRes = sube._generateIntRep();
+                    ExpressionElement& subeResElem = subeRes.getFinalElement();
+
+                    curExp->addElement(subeResElem);
+
+                }
+                else
+                {
+                    curExp->addElement(elem);
+                }
+
+                break;
+             default:
+                curExp->addElement(elem);
+        }
+    }
+
+    // Reduce function calls
+
+
+    // Evaluate unary operators
+
+    // Evaluate binary operators
+
+    e = e.doOp(ElementType::kPlus, ExpressionHelper::AddVar);
+
+    // Return reduced expression
+
+    return e;
+
+}
+
+ExpressionElement& Expression::getFinalElement()
+{
+    if (m_elements.size() != 1)
+        throw std::runtime_error("Expression is not fully reduced!");
+
+    return m_elements[0];
+}
+
+Expression  Expression::doOp(ElementType type,
+                 std::function<ExpressionElement (ExpressionElement&, ExpressionElement&)> func)
+{
+
+    Expression e;
+    bool foundOp = false;
+
+    ElementType op = ElementType::kNone;
+
+    ExpressionElement* left = nullptr;
+
+    int idx = 1;
+
+    for (ExpressionElement& mid : m_elements)
+    {
+        if (mid.elem == type)
+        {
+            foundOp = true;
+
+            ExpressionElement* right;
+
+            try {
+                right = &m_elements.at(idx);
+            }
+            catch (std::out_of_range)
+            {
+                std::stringstream ss;
+                ss << "Binary operator without RHS on line" << mid.line_num;
+                throw std::runtime_error(ss.str());
+            }
+
+            if (left == nullptr)
+            {
+                std::stringstream ss;
+                ss << "Binary operator without LHS on line" << mid.line_num;
+                throw std::runtime_error(ss.str());
+            }
+
+            ExpressionElement out = func(*left, *right);
+
+            e.addElement(out);
+
+            for (int i = idx + 1; i < m_elements.size(); i ++)
+                e.addElement(m_elements[i]);
+
+            goto done;
+
+        }
+        else
+        {
+            if (left != nullptr)
+                e.addElement(*left);
+        }
+
+        left = &mid;
+        idx++;
+    }
+
+    if (left != nullptr)
+        e.addElement(*left);
+
+done:
+    if (foundOp)
+        return e.doOp(type, func);
+    else
+        return e;
+}
+
+

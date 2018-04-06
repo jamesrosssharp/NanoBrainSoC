@@ -206,8 +206,8 @@ void CodeGenerator::generateFunctionDeclaration(Syntax::FunctionDeclaration* fun
 
                     Reg16& r2 = m_registers16.regs[reg];
 
-                    r.use = RegisterUse::Variable32High;
-                    r.var = vargPtr;
+                    r2.use = RegisterUse::Variable32High;
+                    r2.var = vargPtr;
 
                     break;
                 }
