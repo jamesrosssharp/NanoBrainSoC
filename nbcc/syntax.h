@@ -142,6 +142,8 @@ namespace Syntax
         int intValue() const { return m_value.i; }
         unsigned int uintValue() const { return m_value.u; }
 
+        std::string stringValue() const { return m_string; }
+
     private:
         ImmediateType m_immType;
         union
@@ -619,6 +621,9 @@ namespace Syntax
 
         void print(std::ostream &os, int indent) const;
 
+        std::string symbol() { return m_symbol; }
+        std::string reg() { return m_reg; }
+
     private:
 
         std::string m_reg;
@@ -648,6 +653,8 @@ namespace Syntax
         {
             m_registers.push_back(desc);
         }
+
+        const std::list<RegisterDescription*>& getRegisterDescriptions() const { return m_registers; }
 
     private:
 
@@ -680,6 +687,16 @@ namespace Syntax
         }
 
         void print(std::ostream &os, int indent) const;
+
+        std::string getAsm() const
+        {
+            return m_stringLiteral->stringValue();
+        }
+
+        const RegisterList* getInRegisters() const
+        {
+            return m_in;
+        }
 
     private:
 

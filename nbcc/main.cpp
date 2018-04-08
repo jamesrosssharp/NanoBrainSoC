@@ -67,9 +67,10 @@ int main(int argc, char** argv) {
     // open a file handle to a particular file:
     FILE *myfile = fopen(argv[optind], "r");
     // make sure it's valid:
-    if (!myfile) {
-    std::cout << "I can't open file " << argv[optind] << std::endl;
-    return -1;
+    if ( ! myfile)
+    {
+        std::cout << "I can't open file " << argv[optind] << std::endl;
+        return -1;
     }
     // set lex to read from it instead of defaulting to STDIN:
     yyin = myfile;

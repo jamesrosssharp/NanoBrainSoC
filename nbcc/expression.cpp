@@ -312,6 +312,9 @@ IntRep::IntRep Expression::generateIntRep()
     // The returned expression *should* consist of a single element with all the generated
     // int rep stitched together
 
+
+    std::cout << e << std::endl;
+
     ExpressionElement elem = e.getFinalElement();
 
     return elem.intRep;
@@ -320,6 +323,8 @@ IntRep::IntRep Expression::generateIntRep()
 
 Expression Expression::_generateIntRep()
 {
+
+    std::cout << *this << std::endl;
 
     // Search for sub expressions and evaluate them
 
@@ -332,7 +337,7 @@ Expression Expression::_generateIntRep()
         switch (elem.elem)
         {
             case ElementType::kLeftParenthesis:
-                if (stackDepth = 0)
+                if (stackDepth == 0)
                 {
                     curExp = &sube;
                     sube.reset();
@@ -360,6 +365,9 @@ Expression Expression::_generateIntRep()
                     // Recursively evaluate the sube
 
                     Expression subeRes = sube._generateIntRep();
+
+                    std::cout << subeRes << std::endl;
+
                     ExpressionElement& subeResElem = subeRes.getFinalElement();
 
                     curExp->addElement(subeResElem);
@@ -390,6 +398,8 @@ Expression Expression::_generateIntRep()
     // Evaluate binary operators
 
     e = e.doOp(ElementType::kPlus, ExpressionHelper::AddVar);
+    e = e.doOp(ElementType::kMinus, ExpressionHelper::SubVar);
+
 
     // Return reduced expression
 
@@ -420,6 +430,7 @@ Expression  Expression::doOp(ElementType type,
 
     for (ExpressionElement& mid : m_elements)
     {
+
         if (mid.elem == type)
         {
             foundOp = true;

@@ -27,6 +27,16 @@ Expr::ExpressionElement ExpressionHelper::AddVar(Expr::ExpressionElement& left, 
 
 }
 
+Expr::ExpressionElement ExpressionHelper::SubVar(Expr::ExpressionElement& left, Expr::ExpressionElement& right)
+{
+    return GenericBinaryOp(left, right,
+                        [] (IntRep::IntRep& intRep, VariableStore::Var& left, VariableStore::Var& right, VariableStore::Var& out)
+                        {
+                            intRep.subVar(left, right, out);
+                        });
+
+}
+
 Expr::ExpressionElement ExpressionHelper::GenericBinaryOp(Expr::ExpressionElement& left,
                                                           Expr::ExpressionElement& right,
                                         std::function<void (IntRep::IntRep& intrep,
@@ -65,9 +75,38 @@ Expr::ExpressionElement ExpressionHelper::GenericBinaryOp(Expr::ExpressionElemen
 
                     e.intRep.output(temp3);
 
+                    e.elem = Expr::ElementType::kIntRepPlaceHolder;
+
+                    break;
+                }
+                case Expr::ElementType::kIntRepPlaceHolder:
+                {
+
+                    e.intRep.assimilate(right.intRep);
+
+                    VariableStore::Var temp2 = right.intRep.getOutputVar();
+
+                    if (temp2 == VariableStore::Var(0))
+                        throw std::runtime_error("Could not link int rep!");
+
+                    VariableStore::Var temp1 = e.intRep.declareTemporary();
+                    VariableStore::Var temp3 = e.intRep.declareTemporary();
+
+                    e.intRep.loadImm(temp1, left.v.sval);
+
+                    genFunc(e.intRep, temp1, temp2, temp3);
+
+                    e.intRep.deleteTemporary(temp1);
+                    e.intRep.deleteTemporary(temp2);
+
+                    e.intRep.output(temp3);
+
+                    e.elem = Expr::ElementType::kIntRepPlaceHolder;
+
                     break;
                 }
                 default:
+                    printf("Expr::ElementType: %d\n", (int)right.elem);
                     throw std::runtime_error("Cannot add literal (left) to element (right)");
             }
 
@@ -85,6 +124,67 @@ Expr::ExpressionElement ExpressionHelper::GenericBinaryOp(Expr::ExpressionElemen
             throw std::runtime_error("TODO: Add support for adding temporaries");
 
             break;
+        case Expr::ElementType::kIntRepPlaceHolder:
+        {
+            switch (right.elem)
+            {
+                case Expr::ElementType::kLiteral:
+                {
+                    e.intRep.assimilate(left.intRep);
+
+                    VariableStore::Var temp1 = left.intRep.getOutputVar();
+
+                    if (temp1 == VariableStore::Var(0))
+                        throw std::runtime_error("Could not link int rep!");
+
+                    VariableStore::Var temp2 = e.intRep.declareTemporary();
+                    VariableStore::Var temp3 = e.intRep.declareTemporary();
+
+                    e.intRep.loadImm(temp2, right.v.sval);
+
+                    genFunc(e.intRep, temp1, temp2, temp3);
+
+                    e.intRep.deleteTemporary(temp1);
+                    e.intRep.deleteTemporary(temp2);
+
+                    e.intRep.output(temp3);
+
+                    e.elem = Expr::ElementType::kIntRepPlaceHolder;
+
+                    break;
+                }
+                case Expr::ElementType::kIntRepPlaceHolder:
+                {
+                    e.intRep.assimilate(left.intRep);
+                    e.intRep.assimilate(right.intRep);
+
+                    VariableStore::Var temp1 = left.intRep.getOutputVar();
+                    VariableStore::Var temp2 = right.intRep.getOutputVar();
+
+                    if (temp1 == VariableStore::Var(0))
+                        throw std::runtime_error("Could not link int rep!");
+
+                    if (temp2 == VariableStore::Var(0))
+                        throw std::runtime_error("Could not link int rep!");
+
+                    VariableStore::Var temp3 = e.intRep.declareTemporary();
+
+                    genFunc(e.intRep, temp1, temp2, temp3);
+
+                    e.intRep.deleteTemporary(temp1);
+                    e.intRep.deleteTemporary(temp2);
+
+                    e.intRep.output(temp3);
+
+                    e.elem = Expr::ElementType::kIntRepPlaceHolder;
+
+                    break;
+                }
+
+            }
+
+            break;
+        }
         default:
             throw std::runtime_error("Cannot add elements");
     }
@@ -113,9 +213,22 @@ Expr::ExpressionElement ExpressionHelper::DoFunc(Expr::ExpressionElement& expr)
 
     std::vector<VariableStore::Var> args; // TODO: Fill this in
 
+    for (std::shared_ptr<Expr::Expression> argExp : expr.functionArguments)
+    {
+        IntRep::IntRep i = argExp->generateIntRep();
+
+        VariableStore::Var v = i.getOutputVar();
+
+        e.intRep.assimilate(i);
+
+        args.push_back(v);
+
+    }
+
     e.intRep.genFunctionCall(temp1, fhandle, args);
 
     e.intRep.output(temp1);
+    e.elem = Expr::ElementType::kIntRepPlaceHolder;
 
     return e;
 

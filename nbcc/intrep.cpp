@@ -13,9 +13,13 @@
     Notes
     =====
 
-    Intermediate representation, use for compiling expressions into
-    a form which can be optimised to ensure CPU pipeline is utilised
-    to optimal capacity etc.
+    Intermediate representation, used for compiling expressions into
+    a form which can be optimised and then compiled.
+
+    Each block of intrep must have a single output at the end, usually
+    the last element. This allows segments of intrep to be chained together,
+    forming larger programs. These will eventually be omptimised and then compiled.
+
 
 =============================================================================*/
 
@@ -43,9 +47,6 @@ std::ostream& operator << (std::ostream& os, const IntRep::Element& e)
         case IntRep::ElementType::kOutput:
             os << "OUT " << *e.v1;
             break;
-        case IntRep::ElementType::kPushFunctionArg:
-            os << "PUSH_ARG " << *e.v1;
-            break;
         case IntRep::ElementType::kCallFunction:
             os << "CALL " << *e.f1;
             break;
@@ -71,6 +72,20 @@ void IntRep::IntRep::addVar(const VariableStore::Var& left, const VariableStore:
     Element e;
 
     e.element = ElementType::kAdd;
+    e.v1 = left;
+    e.v2 = right;
+    e.v3 = out;
+
+    m_elements.push_back(e);
+
+}
+
+void IntRep::IntRep::subVar(const VariableStore::Var& left, const VariableStore::Var& right, const VariableStore::Var& out)
+{
+
+    Element e;
+
+    e.element = ElementType::kSub;
     e.v1 = left;
     e.v2 = right;
     e.v3 = out;
@@ -154,20 +169,41 @@ void IntRep::IntRep::output(const VariableStore::Var& out)
 void IntRep::IntRep::genFunctionCall(const VariableStore::Var& out, const FunctionStore::FunctionHandle f, const std::vector<VariableStore::Var>& args)
 {
 
-    // Push all arguments
-
-    for (const VariableStore::Var& v : args)
-    {
-        Element e;
-        e.element = ElementType::kPushFunctionArg;
-        e.v1 = v;
-        m_elements.push_back(e);
-    }
-
     Element e;
     e.v1 = out;
     e.f1 = FunctionStore::Func(f);
+    e.args = args;
     e.element = ElementType::kCallFunction;
     m_elements.push_back(e);
 
 }
+
+VariableStore::Var IntRep::IntRep::getOutputVar()
+{
+    // Walk backward and find first output and return the var.
+
+    for (auto e = m_elements.rbegin(); e != m_elements.rend(); e++)
+    {
+        auto elem = *e;
+
+        if (elem.element == ElementType::kOutput)
+        {
+            return elem.v1;
+        }
+
+    }
+
+    return {0};
+}
+
+void IntRep::IntRep::assimilate(const IntRep& i)
+{
+    for (auto e : i.m_elements)
+    {
+        if (e.element == ElementType::kOutput)
+            continue;
+
+        m_elements.push_back(e);
+    }
+}
+

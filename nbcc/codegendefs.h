@@ -11,6 +11,7 @@
 
 #include <stdint.h>
 
+#define SPACES "             "
 
 namespace CodeGen
 {

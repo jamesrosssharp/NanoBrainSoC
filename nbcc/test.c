@@ -22,21 +22,19 @@ short b = 3;
     return a + b;
 }*/
 
-/*void putch(char c)
+void putch(char c)
 {
     asm volatile (
-                    " load r1, 0 \n"
-                    " out  %1, r1 \n"
+                    "load r1, 0 \n"
+                    "out  %0, r1 \n"
                     :
-                    : "=r" (c)
+                    : "r" (c)
                 );
-
-
-}*/
+}
 
 short myfunc()
 {
-    return 2 + 3;
+    return (2 + 3) + (4 - 5);
 }
 
 short main ()
@@ -57,5 +55,10 @@ short main ()
 
     /*return sum(a,b);*/
 
-    return myfunc(     );
+    putch(0x41);
+    putch(0x42);
+    putch(0x42);
+    putch(0x41);
+
+    putch (0x30 + myfunc());
 }

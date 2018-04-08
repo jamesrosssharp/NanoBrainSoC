@@ -93,6 +93,8 @@ namespace CodeGen
         void generateReturnStatement(const Syntax::ReturnStatement* r, std::stringstream& ss,
                                      bool& callsFunctions);
 
+        void generateAsmStatement(const Syntax::AsmStatement* a, std::stringstream& ss);
+        void generateFunctionCall(const Syntax::FunctionCall* f, std::stringstream& ss);
 
         bool reduceExpression(Variable& var, const Syntax::Syntagma* expression);
 

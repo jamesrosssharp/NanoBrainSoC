@@ -84,6 +84,7 @@ int g_str_idx = 0;
 "switch"          { return SWITCH; }
 
 [0-9]+ {yylval.integerLiteral = atoi(yytext); return INT; }
+0x[0-9a-f]+ {yylval.integerLiteral = strtol(yytext, nullptr, 16); return INT;}
 [a-zA-Z_0-9]+ { yylval.symbol = strdup(yytext); return SYMBOL; }
 
 "{"  { return LEFT_BRACE; }

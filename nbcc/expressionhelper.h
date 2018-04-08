@@ -26,6 +26,7 @@ namespace ExpressionHelper
     // Generate a new expression element, allocating a temporary variable to hold the sum
     // of the two expression elements
     Expr::ExpressionElement AddVar(Expr::ExpressionElement& left, Expr::ExpressionElement& right);
+    Expr::ExpressionElement SubVar(Expr::ExpressionElement& left, Expr::ExpressionElement& right);
 
     Expr::ExpressionElement DoFunc(Expr::ExpressionElement& expr);
 

@@ -28,7 +28,7 @@ void VariableStore::popScope()
 std::string VariableStore::catScopeStack()
 {
     std::string s;
-    for (std::vector<std::string>::reverse_iterator ss = m_scopeStack.rbegin(); ss != m_scopeStack.rend(); ++ss)
+    for (std::vector<std::string>::iterator ss = m_scopeStack.begin(); ss != m_scopeStack.end(); ++ss)
         s += "." + *ss;
     return s;
 }
@@ -58,4 +58,32 @@ VariableStore::VariableHandle VariableStore::declareTemporary(const CodeGen::Typ
     ss << "t" << m_temporaryIdx++;
 
     return declareVariable(ss.str(), type);
+}
+
+VariableStore::Var VariableStore::findVar(const std::string& name)
+{
+    // search for variable name in all scopes from current down to global scope.
+    // Return if found, else null variable
+
+    for (auto scope = m_scopeStack.rbegin(); scope != m_scopeStack.rend(); scope ++)
+    {
+        std::string s;
+        for (std::vector<std::string>::reverse_iterator ss = scope; ss != m_scopeStack.rend(); ++ss)
+            s = '.' + *ss  + s;
+
+        std::string nameToFind = s + "." + name;
+
+        int i = 1;
+        for (auto v : m_variables)
+        {
+
+            if (v.name == nameToFind)
+            {
+                return Var{i};
+            }
+            i ++;
+        }
+    }
+
+    return Var{0};
 }

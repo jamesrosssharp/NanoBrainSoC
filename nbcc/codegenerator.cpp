@@ -543,6 +543,33 @@ void CodeGenerator::generateBlock(const Syntax::Block *b, std::stringstream &ss,
 
                 break;
             }
+            case Syntax::ElementType::AsmStatement:
+            {
+
+                Syntax::AsmStatement* a = dynamic_cast<Syntax::AsmStatement*>(statement);
+
+                if (a == nullptr)
+                    throw std::runtime_error("Could not cast to an asm statement!");
+
+                generateAsmStatement(a, ss);
+
+                break;
+
+            }
+            case Syntax::ElementType::FunctionCall:
+            {
+                Syntax::FunctionCall* f = dynamic_cast<Syntax::FunctionCall*>(statement);
+
+                if (f == nullptr)
+                    throw std::runtime_error("Could not cast to a function call!");
+
+                generateFunctionCall(f, ss);
+
+                callsFunctions = true;  // Need to set this so that the link register will be preserved in function
+                                        // prologue for correct operation
+
+                break;
+            }
             default:
             {
                 std::stringstream err;
@@ -579,6 +606,97 @@ void CodeGenerator::generateReturnStatement(const Syntax::ReturnStatement* r,
     // emit ret instruction
 
     ss << "             ret" << std::endl;
+
+}
+
+void CodeGenerator::generateAsmStatement(const Syntax::AsmStatement* a, std::stringstream& ss)
+{
+
+    // Process which registers are used
+
+    //  - input registers
+
+    const Syntax::RegisterList* inRegs = a->getInRegisters();
+
+    std::vector<int> registers;
+
+    for (Syntax::RegisterDescription* r : inRegs->getRegisterDescriptions())
+    {
+        //std::cout << "RegDesc:" << r->symbol() << " " << r->reg() << std::endl;
+
+        if (r->reg() != "r")
+            throw std::runtime_error("Inline assembly only supports register parameters");
+
+        // find the register
+
+        VariableStore::Var v = VariableStore::getInstance()->findVar(r->symbol());
+
+        if (v == VariableStore::Var{0})
+            throw std::runtime_error("Could not find parameter!");
+
+        int reg = IntRepCompiler::FindRegForVar(m_registers16, v);
+
+        registers.push_back(reg);
+    }
+
+    //  - clobber registers
+
+
+    // Preserve clobbered registers
+
+    // Set up inputs
+
+
+    // massage asm: replace all "\n" with proper newline
+
+    std::string asmStr = a->getAsm();
+
+    int pos;
+    while ((pos = asmStr.find("\\n")) != std::string::npos)
+    {
+        asmStr.replace(pos, 2, "\n" SPACES);
+    }
+
+    // replace input registers
+
+    int i = 0;
+    for (int reg : registers)
+    {
+        std::stringstream ss;
+        ss << "%" << i;
+
+        std::stringstream ss2;
+        ss2 << "r" << reg;
+
+        while ((pos = asmStr.find(ss.str())) != std::string::npos)
+        {
+            asmStr.replace(pos, 2, ss2.str());
+        }
+
+        i ++;
+    }
+
+
+    // Dump asm
+
+    ss << SPACES << "//--- Begin inline asm" << std::endl << SPACES << asmStr << std::endl << SPACES "//--- End inline asm" << std::endl;
+
+}
+
+void CodeGenerator::generateFunctionCall(const Syntax::FunctionCall* f, std::stringstream& ss)
+{
+
+    IntRep::IntRep i;
+
+    Expr::Expression e;
+
+    e.fromSyntaxTree(f);
+
+    i = e.generateIntRep();
+
+    std::cout << i << std::endl;
+
+    ss << IntRepCompiler::GenerateAssembly(i, m_registers16, false);
 
 }
 

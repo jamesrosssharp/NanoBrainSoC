@@ -46,7 +46,8 @@ namespace Expr
         kFunctionCall,
         kLiteral,
         kSymbol,
-        kTemporary
+        kTemporary,
+        kIntRepPlaceHolder
     };
 
     class Expression;

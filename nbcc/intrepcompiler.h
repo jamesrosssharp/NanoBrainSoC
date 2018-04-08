@@ -15,7 +15,7 @@ public:
                                         bool isReturnStatement);
 
     static int FindNewReg(CodeGen::Registers16& registers16);
-    static int FindRegForVar(CodeGen::Registers16& registers16, const VariableStore::Var& v);
+    static int FindRegForVar(CodeGen::Registers16& registers16, const VariableStore::Var& v, bool aboveReg8 = false);
 
 };
 

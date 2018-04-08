@@ -47,6 +47,7 @@ public:
 
     Var declareVar(const std::string& name, const CodeGen::Type& type) { return Var(declareVariable(name, type)); }
     Var declareTemporaryVar(const CodeGen::Type& type) { return Var(declareTemporary(type)); }
+    Var findVar(const std::string& name);
 
     CodeGen::Variable* getVariable(VariableHandle handle) { return &m_variables.at(handle - 1); }
 

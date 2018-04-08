@@ -47,8 +47,8 @@ namespace IntRep
         kDeleteTemporary,
         kOutput,
         kAdd,
+        kSub,
 
-        kPushFunctionArg,
         kCallFunction
     };
 
@@ -64,6 +64,8 @@ namespace IntRep
 
         FunctionStore::Func    f1;
 
+        std::vector<VariableStore::Var> args;
+
         Element() : v1(0), v2(0), v3(0), f1(0) {}
 
     };
@@ -74,6 +76,7 @@ namespace IntRep
 
         VariableStore::Var  declareTemporary();
         void addVar(const VariableStore::Var& left, const VariableStore::Var& right, const VariableStore::Var& out);
+        void subVar(const VariableStore::Var& left, const VariableStore::Var& right, const VariableStore::Var& out);
 
         void loadImm(const VariableStore::Var& var, int32_t intval);
         void loadImm(const VariableStore::Var& var, uint32_t intval);
@@ -85,6 +88,10 @@ namespace IntRep
         void genFunctionCall(const VariableStore::Var& out, const FunctionStore::FunctionHandle f, const std::vector<VariableStore::Var>& args);
 
         friend std::ostream& (::operator <<) (std::ostream& os, const IntRep& i);
+
+        VariableStore::Var getOutputVar();
+
+        void assimilate(const IntRep& i);
 
     private:
 
