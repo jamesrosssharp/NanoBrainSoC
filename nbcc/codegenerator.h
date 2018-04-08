@@ -18,6 +18,9 @@
 #include "syntax.h"
 #include "codegendefs.h"
 
+#include "variablestore.h"
+#include "functionstore.h"
+
 #include <iostream>
 #include <sstream>
 #include <deque>
@@ -48,7 +51,10 @@ namespace CodeGen
     struct Reg16
     {
         RegisterUse use;
-        Variable* var;
+        VariableStore::Var var;
+        bool dirty;
+
+        Reg16() : var(0) {}
     };
 
     struct Registers16
@@ -60,7 +66,8 @@ namespace CodeGen
             for (Reg16& r : regs)
             {
                 r.use = RegisterUse::Empty;
-                r.var = nullptr;
+                r.var = VariableStore::Var{0};
+                r.dirty = false;
             }
         }
     };
@@ -98,10 +105,50 @@ namespace CodeGen
         std::stringstream m_data;
         std::stringstream m_bss;
 
-        std::deque<Scope> m_scopes;
-
         Registers16 m_registers16;
+
+        bool m_inGlobalScope;
 
     };
 
 }
+
+inline std::ostream& operator << (std::ostream& os, const CodeGen::Reg16& r)
+{
+    os << "REG16 ";
+    os << "Use: ";
+    switch (r.use)
+    {
+        case CodeGen::RegisterUse::Empty:
+            os << "Empty ";
+            break;
+        case CodeGen::RegisterUse::Variable16:
+            os << "VAR16 ";
+            break;
+        default:
+            os << "unknown ";
+            break;
+    }
+
+    os << "dirty: " << r.dirty << " ";
+
+    if (r.use != CodeGen::RegisterUse::Empty)
+        os << "var: " << *r.var;
+
+    return os;
+
+}
+
+inline std::ostream& operator << (std::ostream& os, const CodeGen::Registers16& regs)
+{
+    int i = 0;
+    for (auto r : regs.regs)
+    {
+        os << "r" << i++ << " : ";
+        os << r << std::endl;
+    }
+
+    return os;
+}
+
+

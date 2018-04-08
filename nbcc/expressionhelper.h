@@ -27,9 +27,11 @@ namespace ExpressionHelper
     // of the two expression elements
     Expr::ExpressionElement AddVar(Expr::ExpressionElement& left, Expr::ExpressionElement& right);
 
+    Expr::ExpressionElement DoFunc(Expr::ExpressionElement& expr);
+
     Expr::ExpressionElement GenericBinaryOp(Expr::ExpressionElement& left, Expr::ExpressionElement& right,
-                                            std::function<void (IntRep::IntRep& intrep, CodeGen::Variable* left,
-                                                                CodeGen::Variable* right,
-                                                                CodeGen::Variable* out)> genFunc);
+                                            std::function<void (IntRep::IntRep& intrep, VariableStore::Var& left,
+                                                                VariableStore::Var& right,
+                                                                VariableStore::Var& out)> genFunc);
 
 }

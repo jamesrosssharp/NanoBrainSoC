@@ -94,6 +94,8 @@ namespace Expr
         Expression  doOp(ElementType op,
                          std::function<ExpressionElement (ExpressionElement&, ExpressionElement&)> func);
 
+        Expression doFunctionCalls();
+
         ExpressionElement& getFinalElement();
 
         std::vector<ExpressionElement> m_elements;

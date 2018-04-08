@@ -50,35 +50,7 @@ namespace CodeGen
         std::vector<Variable> arguments;
     };
 
-    // Scopes have variables and functions. They will also have structs and unions at some future stage.
-    class Scope
-    {
-    public:
 
-        Scope(std::string name) :
-            m_name(name)
-        {
-
-        }
-
-        void addVariable(Variable&& v)
-        {
-            m_variables.insert(std::pair<std::string, Variable>(v.name, v));
-        }
-
-        Variable& variable(std::string name)
-        {
-            return m_variables.at(name);
-        }
-
-    private:
-        std::map <std::string, Variable> m_variables;
-
-        // functions can *only* be defined at global scope.
-        std::map <std::string, Function> m_functions;
-
-        std::string m_name;
-    };
 
 }
 
@@ -123,7 +95,15 @@ inline std::ostream& operator << (std::ostream& os, const CodeGen::Type& t)
 
 inline std::ostream& operator << (std::ostream& os, const CodeGen::Variable& v)
 {
-    os << v.name << "|" << v.asmName << std::endl;
+    os << v.name << "|" << v.asmName;
 
     return os;
 }
+
+inline std::ostream& operator << (std::ostream& os, const CodeGen::Function& f)
+{
+    os << f.name;
+
+    return os;
+}
+

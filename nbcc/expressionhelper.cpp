@@ -14,10 +14,13 @@
 
 #include "expressionhelper.h"
 
+#include "variablestore.h"
+#include "functionstore.h"
+
 Expr::ExpressionElement ExpressionHelper::AddVar(Expr::ExpressionElement& left, Expr::ExpressionElement& right)
 {
     return GenericBinaryOp(left, right,
-                        [] (IntRep::IntRep& intRep, CodeGen::Variable* left, CodeGen::Variable* right, CodeGen::Variable* out)
+                        [] (IntRep::IntRep& intRep, VariableStore::Var& left, VariableStore::Var& right, VariableStore::Var& out)
                         {
                             intRep.addVar(left, right, out);
                         });
@@ -27,8 +30,8 @@ Expr::ExpressionElement ExpressionHelper::AddVar(Expr::ExpressionElement& left, 
 Expr::ExpressionElement ExpressionHelper::GenericBinaryOp(Expr::ExpressionElement& left,
                                                           Expr::ExpressionElement& right,
                                         std::function<void (IntRep::IntRep& intrep,
-                                                            CodeGen::Variable* left,
-                                                            CodeGen::Variable* right, CodeGen::Variable* out)> genFunc)
+                                                            VariableStore::Var& left,
+                                                            VariableStore::Var& right, VariableStore::Var& out)> genFunc)
 {
 
     // Check type of left and right... can only add immediate numeric values with each other, with other variables,
@@ -48,9 +51,9 @@ Expr::ExpressionElement ExpressionHelper::GenericBinaryOp(Expr::ExpressionElemen
                     // Deduce type of literal - we can only operate on integral types and char literals
                     // otherwise error.
 
-                    CodeGen::Variable* temp1 = e.intRep.declareTemporary();
-                    CodeGen::Variable* temp2 = e.intRep.declareTemporary();
-                    CodeGen::Variable* temp3 = e.intRep.declareTemporary();
+                    VariableStore::Var temp1 = e.intRep.declareTemporary();
+                    VariableStore::Var temp2 = e.intRep.declareTemporary();
+                    VariableStore::Var temp3 = e.intRep.declareTemporary();
 
                     e.intRep.loadImm(temp1, left.v.sval);   // TODO: These depend on type
                     e.intRep.loadImm(temp2, right.v.sval);
@@ -91,4 +94,29 @@ Expr::ExpressionElement ExpressionHelper::GenericBinaryOp(Expr::ExpressionElemen
 
 }
 
+Expr::ExpressionElement ExpressionHelper::DoFunc(Expr::ExpressionElement& expr)
+{
+    FunctionStore* fstore = FunctionStore::getInstance();
 
+    FunctionStore::FunctionHandle fhandle = fstore->findFunctionByName(expr.functionName);
+
+    if (fhandle == 0)   // TODO: Generate proper error messages
+        throw std::runtime_error("Undefined function!");
+
+    CodeGen::Function* f = fstore->getFunction(fhandle);
+
+    Expr::ExpressionElement e;
+
+    VariableStore::Var temp1 = e.intRep.declareTemporary(); // TODO: Declare with type from function
+
+    // Create variables for functions arguments
+
+    std::vector<VariableStore::Var> args; // TODO: Fill this in
+
+    e.intRep.genFunctionCall(temp1, fhandle, args);
+
+    e.intRep.output(temp1);
+
+    return e;
+
+}

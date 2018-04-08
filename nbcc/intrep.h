@@ -23,6 +23,8 @@
 
 #include "codegendefs.h"
 #include "types.h"
+#include "variablestore.h"
+#include "functionstore.h"
 
 #include <iostream>
 #include <stdint.h>
@@ -34,60 +36,63 @@ namespace IntRep
 
 std::ostream& operator << (std::ostream& os, const IntRep::IntRep& i);
 
+class IntRepCompiler;
+
 namespace IntRep
 {
-
     enum class ElementType
     {
         kDeclareTemporary,
         kLoadImm,
         kDeleteTemporary,
         kOutput,
-
         kAdd,
+
+        kPushFunctionArg,
+        kCallFunction
     };
 
     struct Element
     {
         ElementType element;
 
-        CodeGen::Variable* v1 = nullptr;
-        CodeGen::Variable* v2 = nullptr;
-        CodeGen::Variable* v3 = nullptr;
+        VariableStore::Var v1;
+        VariableStore::Var v2;
+        VariableStore::Var v3;
 
         ImmediateValue     immval;
 
-    };
+        FunctionStore::Func    f1;
 
+        Element() : v1(0), v2(0), v3(0), f1(0) {}
+
+    };
 
     class IntRep
     {
     public:
 
-        void addVar(CodeGen::Variable* left, CodeGen::Variable* right, CodeGen::Variable* out);
+        VariableStore::Var  declareTemporary();
+        void addVar(const VariableStore::Var& left, const VariableStore::Var& right, const VariableStore::Var& out);
 
-        CodeGen::Variable* declareTemporary();
+        void loadImm(const VariableStore::Var& var, int32_t intval);
+        void loadImm(const VariableStore::Var& var, uint32_t intval);
 
-        void loadImm(CodeGen::Variable* var, int32_t intval);
-        void loadImm(CodeGen::Variable* var, uint32_t intval);
+        void deleteTemporary(const VariableStore::Var& temp);
 
-        void deleteTemporary(CodeGen::Variable* temp);
+        void output(const VariableStore::Var& out);
 
-        void output(CodeGen::Variable* out);
+        void genFunctionCall(const VariableStore::Var& out, const FunctionStore::FunctionHandle f, const std::vector<VariableStore::Var>& args);
 
         friend std::ostream& (::operator <<) (std::ostream& os, const IntRep& i);
 
     private:
 
-        void loadImm(CodeGen::Variable* var, ImmediateValue& v);
-
-
-        std::vector<CodeGen::Variable> m_temporaries;
-        std::vector<std::string> m_labels;
-
-        uint32_t m_tempvarIdx = 0;
+        void loadImm(const VariableStore::Var& var, ImmediateValue& v);
 
         std::vector<Element> m_elements;
+
+        friend class ::IntRepCompiler;
 
     };
 

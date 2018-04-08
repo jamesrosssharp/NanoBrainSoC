@@ -21,30 +21,33 @@
 
 #include "intrep.h"
 #include "codegendefs.h"
+#include "variablestore.h"
+#include "functionstore.h"
 
 std::ostream& operator << (std::ostream& os, const IntRep::Element& e)
 {
     switch (e.element)
     {
         case IntRep::ElementType::kAdd:
-            if (e.v1 != nullptr && e.v2 != nullptr && e.v3 != nullptr)
-                os << "ADD " << *e.v1 << " " << *e.v2 << " " << *e.v3 << std::endl;
+            os << "ADD " << *e.v1 << " " << *e.v2 << " " << *e.v3;
             break;
         case IntRep::ElementType::kDeclareTemporary:
-            if (e.v1 != nullptr)
-                os << "DECL " << *e.v1 << std::endl;
+            os << "DECL " << *e.v1;
             break;
         case IntRep::ElementType::kDeleteTemporary:
-            if (e.v1 != nullptr)
-                os << "DEL " << *e.v1 << std::endl;
+            os << "DEL " << *e.v1;
             break;
         case IntRep::ElementType::kLoadImm:
-            if (e.v1 != nullptr)
-                os << "LOADIMM " << *e.v1 << " " << e.immval << std::endl;
+            os << "LOADIMM " << *e.v1 << " " << e.immval;
             break;
         case IntRep::ElementType::kOutput:
-            if (e.v1 != nullptr)
-                os << "OUT " << *e.v1 << std::endl;
+            os << "OUT " << *e.v1;
+            break;
+        case IntRep::ElementType::kPushFunctionArg:
+            os << "PUSH_ARG " << *e.v1;
+            break;
+        case IntRep::ElementType::kCallFunction:
+            os << "CALL " << *e.f1;
             break;
     }
 
@@ -62,43 +65,52 @@ std::ostream& operator << (std::ostream& os, const IntRep::IntRep& i)
 }
 
 
-void IntRep::IntRep::addVar(CodeGen::Variable* left, CodeGen::Variable* right, CodeGen::Variable* out)
+void IntRep::IntRep::addVar(const VariableStore::Var& left, const VariableStore::Var& right, const VariableStore::Var& out)
 {
-
-}
-
-CodeGen::Variable* IntRep::IntRep::declareTemporary()
-{
-
-    std::stringstream ss;
-    ss << "temp" << m_tempvarIdx++;
-    std::string tvarName = ss.str();
-
-    CodeGen::Variable var;
-    var.name = tvarName;
-    var.asmName = tvarName;
-    m_temporaries.push_back(var);
 
     Element e;
-    e.element = ElementType::kDeclareTemporary;
-    e.v1 = &m_temporaries.back();
 
-    std::cout << *e.v1 << std::endl;
+    e.element = ElementType::kAdd;
+    e.v1 = left;
+    e.v2 = right;
+    e.v3 = out;
 
     m_elements.push_back(e);
 
-    std::cout << m_elements.back() << std::endl;
-
-    return &m_temporaries.back();
-
 }
 
-void IntRep::IntRep::deleteTemporary(CodeGen::Variable* temp)
+VariableStore::Var IntRep::IntRep::declareTemporary()
 {
 
+    Element e;
+    e.element = ElementType::kDeclareTemporary;
+
+    CodeGen::Type t;
+
+    t.type = BuiltInType::kInt; // Todo: this depends on what we're declaring...
+
+    VariableStore* v = VariableStore::getInstance();
+
+    e.v1 = VariableStore::Var(v->declareTemporary(t));
+
+    m_elements.push_back(e);
+
+    return e.v1;
 }
 
-void IntRep::IntRep::loadImm(CodeGen::Variable* var, int32_t intval)
+void IntRep::IntRep::deleteTemporary(const VariableStore::Var& temp)
+{
+
+    Element e;
+    e.element = ElementType::kDeleteTemporary;
+
+    e.v1 = temp;
+
+    m_elements.push_back(e);
+
+}
+
+void IntRep::IntRep::loadImm(const VariableStore::Var& var, int32_t intval)
 {
     // For now, make all immediates that come here signed shorts
     // TODO: parser must determine type associated with an immediate
@@ -108,10 +120,9 @@ void IntRep::IntRep::loadImm(CodeGen::Variable* var, int32_t intval)
     v.v.sval = intval;
 
     loadImm(var, v);
-
 }
 
-void IntRep::IntRep::loadImm(CodeGen::Variable* var, uint32_t intval)
+void IntRep::IntRep::loadImm(const VariableStore::Var& var, uint32_t intval)
 {
     // For now, make all immediates that come here unsigned shorts
     ImmediateValue v;
@@ -121,7 +132,7 @@ void IntRep::IntRep::loadImm(CodeGen::Variable* var, uint32_t intval)
     loadImm(var, v);
 }
 
-void IntRep::IntRep::loadImm(CodeGen::Variable* var, ImmediateValue& v)
+void IntRep::IntRep::loadImm(const VariableStore::Var& var, ImmediateValue& v)
 {
     Element e;
     e.element = ElementType::kLoadImm;
@@ -131,10 +142,32 @@ void IntRep::IntRep::loadImm(CodeGen::Variable* var, ImmediateValue& v)
 }
 
 
-void IntRep::IntRep::output(CodeGen::Variable* out)
+void IntRep::IntRep::output(const VariableStore::Var& out)
 {
-
+    Element e;
+    e.element = ElementType::kOutput;
+    e.v1 = out;
+    m_elements.push_back(e);
 }
 
 
+void IntRep::IntRep::genFunctionCall(const VariableStore::Var& out, const FunctionStore::FunctionHandle f, const std::vector<VariableStore::Var>& args)
+{
 
+    // Push all arguments
+
+    for (const VariableStore::Var& v : args)
+    {
+        Element e;
+        e.element = ElementType::kPushFunctionArg;
+        e.v1 = v;
+        m_elements.push_back(e);
+    }
+
+    Element e;
+    e.v1 = out;
+    e.f1 = FunctionStore::Func(f);
+    e.element = ElementType::kCallFunction;
+    m_elements.push_back(e);
+
+}

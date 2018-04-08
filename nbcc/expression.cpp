@@ -377,7 +377,13 @@ Expression Expression::_generateIntRep()
     }
 
     // Reduce function calls
+    //
+    //  TODO:
+    //  If function calls appear on the other side of a || or && operator, we only evaluate them
+    //  if the needed. Need to fix this. For the time being, evaluate all function calls
+    //
 
+    e = e.doFunctionCalls();
 
     // Evaluate unary operators
 
@@ -467,4 +473,24 @@ done:
         return e;
 }
 
+Expression Expression::doFunctionCalls()
+{
+    Expression e;
 
+    for (ExpressionElement& elem : m_elements)
+    {
+        if (elem.elem == ElementType::kFunctionCall)
+        {
+            ExpressionElement funcElem = ExpressionHelper::DoFunc(elem);
+
+            e.addElement(funcElem);
+        }
+        else
+        {
+            e.addElement(elem);
+        }
+    }
+
+    return e;
+
+}

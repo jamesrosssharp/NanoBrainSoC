@@ -57,5 +57,5 @@ short main ()
 
     /*return sum(a,b);*/
 
-    return myfunc();
+    return myfunc(     );
 }

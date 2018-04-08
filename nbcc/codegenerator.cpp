@@ -31,6 +31,11 @@ The Expression class is used to simplify expressions and generate an intermediat
 
 #include "codegenerator.h"
 #include "expression.h"
+#include "variablestore.h"
+#include "functionstore.h"
+
+#include "intrep.h"
+#include "intrepcompiler.h"
 
 #include <iostream>
 
@@ -44,16 +49,10 @@ CodeGenerator::CodeGenerator(Syntax::Syntagma* toplevel)
     if (m_toplevel == nullptr)
         throw std::runtime_error("toplevel is not a Top Level!\n");
 
-    // Create global scope
-
-    m_scopes.emplace_back("Global");
+    m_inGlobalScope = true;
 
 }
 
-bool CodeGenerator::inGlobalScope()
-{
-    return (m_scopes.size() == 1);
-}
 
 void CodeGenerator::generate()
 {
@@ -135,6 +134,11 @@ void CodeGenerator::generateCode(Syntax::Syntagma *syntagma)
     }
 }
 
+bool CodeGenerator::inGlobalScope()
+{
+    return m_inGlobalScope;
+}
+
 void CodeGenerator::generateFunctionDeclaration(Syntax::FunctionDeclaration* func)
 {
 
@@ -145,24 +149,36 @@ void CodeGenerator::generateFunctionDeclaration(Syntax::FunctionDeclaration* fun
         throw std::runtime_error(errtext.str());
     }
 
+    m_inGlobalScope = false;
+
     Function f;
 
     f.name = func->functionName();
+
+    // To do: return type, arguments
 
     std::string funcname = "f_";
     funcname += f.name;
 
     f.asmName = funcname;
 
+    FunctionStore* fstore = FunctionStore::getInstance();
+
+    fstore->declareFunction(f);
+
     m_text << funcname << ":" << std::endl;
 
     // Create a new scope for the function and put the parameters in it
 
-    Scope s(funcname);
+    VariableStore* vstore = VariableStore::getInstance();
+
+    vstore->pushScope(funcname);
 
     const Syntax::FunctionArguments* args = func->arguments();
 
-    int reg = 4;
+    int reg = 4;    // first argument is r4
+
+    m_registers16.reset();
 
     for (Syntax::Syntagma* a : args->arguments())
     {
@@ -171,27 +187,20 @@ void CodeGenerator::generateFunctionDeclaration(Syntax::FunctionDeclaration* fun
         if (v == nullptr)
             throw std::runtime_error("Function argument not a variable!");
 
-        Variable varg;
 
         // Determine type of variable
 
         const Syntax::Type* t = v->varType();
 
-        varg.type = generateType(t, nullptr);
+        Type type = generateType(t, nullptr);
 
-        varg.name = v->name();
+        std::string name = v->name();
 
-        // Create register mapping for argument
-
-        m_registers16.reset();
-
-        s.addVariable(std::move(varg));
-
-        Variable* vargPtr = &s.variable(v->name());
+        VariableStore::Var var = vstore->declareVar(name, type);
 
         if (reg < 8)
         {
-            switch(vargPtr->type.type)
+            switch(var->type.type)
             {
                 case BuiltInType::kInt:
                 case BuiltInType::kUInt:
@@ -200,14 +209,14 @@ void CodeGenerator::generateFunctionDeclaration(Syntax::FunctionDeclaration* fun
                     Reg16& r = m_registers16.regs[reg];
 
                     r.use = RegisterUse::Variable32Low;
-                    r.var = vargPtr;
+                    r.var = var;
 
                     reg ++;
 
                     Reg16& r2 = m_registers16.regs[reg];
 
                     r2.use = RegisterUse::Variable32High;
-                    r2.var = vargPtr;
+                    r2.var = var;
 
                     break;
                 }
@@ -221,7 +230,7 @@ void CodeGenerator::generateFunctionDeclaration(Syntax::FunctionDeclaration* fun
                     Reg16& r = m_registers16.regs[reg];
 
                     r.use = RegisterUse::Variable16;
-                    r.var = vargPtr;
+                    r.var = var;
 
                     reg ++;
 
@@ -231,7 +240,7 @@ void CodeGenerator::generateFunctionDeclaration(Syntax::FunctionDeclaration* fun
                 {
                     // any types we don't support yet
                     std::stringstream ss;
-                    ss << "Unsupported type for parameter: " << varg.type.name;
+                    ss << "Unsupported type for parameter: " << var->type.name;
                     throw std::runtime_error(ss.str());
                 }
             }
@@ -247,8 +256,6 @@ void CodeGenerator::generateFunctionDeclaration(Syntax::FunctionDeclaration* fun
 
     }
 
-    m_scopes.push_back(s);
-
     // Generate function body - this will determine if any functions are called
 
     std::stringstream functionBody;
@@ -262,7 +269,7 @@ void CodeGenerator::generateFunctionDeclaration(Syntax::FunctionDeclaration* fun
 
     // pop scope
 
-    m_scopes.pop_back();
+    vstore->popScope();
 
     // Generate function prologue. If this function calls any other functions we have
     // to preserve the link register
@@ -296,6 +303,8 @@ void CodeGenerator::generateFunctionDeclaration(Syntax::FunctionDeclaration* fun
     }
 
     m_text << std::endl;
+
+    m_inGlobalScope = true;
 
 }
 
@@ -352,8 +361,7 @@ void CodeGenerator::generateVariableDeclaration(Syntax::VariableDeclaration* var
 
 
         // add to global scope.
-
-        m_scopes.front().addVariable(std::move(v));
+        // TODO: Do this
 
 
     }
@@ -511,9 +519,7 @@ void CodeGenerator::generateBlock(const Syntax::Block *b, std::stringstream &ss,
     std::stringstream scopeSs;
     scopeSs << "block" << scopeId;
 
-    Scope s(scopeSs.str());
-
-    m_scopes.push_back(s);
+    VariableStore::getInstance()->pushScope(scopeSs.str());
 
     // process each statement in the block in turn and handle it appropriately
 
@@ -548,8 +554,7 @@ void CodeGenerator::generateBlock(const Syntax::Block *b, std::stringstream &ss,
 
     }
 
-    // pop scope
-    m_scopes.pop_back();
+    VariableStore::getInstance()->popScope();
 
 }
 
@@ -565,6 +570,15 @@ void CodeGenerator::generateReturnStatement(const Syntax::ReturnStatement* r,
 
     IntRep::IntRep i = e.generateIntRep();
 
-    std::cout << i << std::endl;
+    // TODO: Add support for 32 bit registers
+    ss << IntRepCompiler::GenerateAssembly(i, m_registers16 /*, m_registers32*/, true);
+
+    // restore all clobbered registers
+
+
+    // emit ret instruction
+
+    ss << "             ret" << std::endl;
+
 }
 
