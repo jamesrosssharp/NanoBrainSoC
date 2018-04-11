@@ -96,6 +96,7 @@ namespace Expr
                          std::function<ExpressionElement (ExpressionElement&, ExpressionElement&)> func);
 
         Expression doFunctionCalls();
+        Expression doImmediates();
 
         ExpressionElement& getFinalElement();
 

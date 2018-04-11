@@ -1,1 +1,1 @@
-build/nbsim -b images/bram.img -f images/flash.img -s images/sdcard.img
+build/nbsim -b images/test.bin -f images/flash.img -s images/sdcard.img

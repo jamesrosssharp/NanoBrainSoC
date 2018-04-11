@@ -29,6 +29,7 @@ void putch(char c)
                     "out  %0, r1 \n"
                     :
                     : "r" (c)
+                    : "r1"
                 );
 }
 
@@ -57,8 +58,8 @@ short main ()
 
     putch(0x41);
     putch(0x42);
-    putch(0x42);
-    putch(0x41);
+  //  putch(0x42);
+  //  putch(0x41);
 
     putch (0x30 + myfunc());
 }

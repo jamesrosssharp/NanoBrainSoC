@@ -26,6 +26,7 @@ std::string IntRepCompiler::GenerateAssembly(IntRep::IntRep i,
 
                 registers16.regs[reg].var = v;
                 registers16.regs[reg].use = CodeGen::RegisterUse::Variable16;
+                registers16.regs[reg].dirty = true;
 
                 break;
             }
@@ -58,17 +59,19 @@ std::string IntRepCompiler::GenerateAssembly(IntRep::IntRep i,
                 if (reg1 == -1 || reg2 == -1 || reg3 == -1)
                     throw std::runtime_error("Could not find register");
 
-                // Load op1 into r0
+                // Load op1 into r1
 
-                ss << SPACES << "load r0, r" << reg1 << std::endl;
+                ss << SPACES << "load r1, r" << reg1 << std::endl;
 
-                // Add op2 to r0
+                // Add op2 to r1
 
-                ss << SPACES << "add  r0, r" << reg2 << std::endl;
+                ss << SPACES << "add  r1, r" << reg2 << std::endl;
 
-                // Store r0 to output register
+                // Store r1 to output register
 
-                ss << SPACES << "load r" << reg3 << ", r0" << std::endl;
+                ss << SPACES << "load r" << reg3 << ", r1" << std::endl;
+
+                registers16.regs[1].dirty = true;
 
                 break;
             }
@@ -89,17 +92,19 @@ std::string IntRepCompiler::GenerateAssembly(IntRep::IntRep i,
                 if (reg1 == -1 || reg2 == -1 || reg3 == -1)
                     throw std::runtime_error("Could not find register");
 
-                // Load op1 into r0
+                // Load op1 into r1
 
-                ss << SPACES << "load r0, r" << reg1 << std::endl;
+                ss << SPACES << "load r1, r" << reg1 << std::endl;
 
-                // Add op2 to r0
+                // Add op2 to r1
 
-                ss << SPACES << "sub  r0, r" << reg2 << std::endl;
+                ss << SPACES << "sub  r1, r" << reg2 << std::endl;
 
                 // Store r0 to output register
 
-                ss << SPACES << "load r" << reg3 << ", r0" << std::endl;
+                ss << SPACES << "load r" << reg3 << ", r1" << std::endl;
+
+                registers16.regs[1].dirty = true;
 
                 break;
             }
@@ -113,10 +118,7 @@ std::string IntRepCompiler::GenerateAssembly(IntRep::IntRep i,
 
                 int immval = e.immval.v.uval;
 
-                if (immval >= 16)
-                    ss << SPACES << "imm  " << ((immval & 0xfff0) >> 4) << std::endl;
-
-                ss << SPACES << "load r" << reg << ", " << (immval & 0xf) << std::endl;
+                ss << SPACES << "load r" << reg << ", " << immval << std::endl;
 
                 break;
             }
@@ -157,6 +159,8 @@ std::string IntRepCompiler::GenerateAssembly(IntRep::IntRep i,
 
                     // TODO
 
+                registers16.regs[0].dirty = true;
+
                 break;
             }
             case IntRep::ElementType::kOutput:
@@ -169,6 +173,8 @@ std::string IntRepCompiler::GenerateAssembly(IntRep::IntRep i,
                         throw std::runtime_error("Could not find register!");
 
                     ss << SPACES << "load r0, r" << reg << std::endl;
+
+                    registers16.regs[0].dirty = true;
                 }
 
                 break;

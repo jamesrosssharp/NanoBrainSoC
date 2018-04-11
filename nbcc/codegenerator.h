@@ -77,7 +77,7 @@ namespace CodeGen
     public:
         CodeGenerator(Syntax::Syntagma* toplevel);
 
-        void generate();
+        void generate(std::string fname);
 
     private:
 
@@ -99,6 +99,8 @@ namespace CodeGen
         bool reduceExpression(Variable& var, const Syntax::Syntagma* expression);
 
         bool inGlobalScope();
+
+        Register convertReg(char* reg);
 
         Syntax::TopLevel* m_toplevel;
 

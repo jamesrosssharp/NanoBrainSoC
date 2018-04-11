@@ -33,6 +33,7 @@
   char *opcval;
   char *pseudoopval;
 }
+%error-verbose
 
 %token COMMA HEX
 %token END ENDL

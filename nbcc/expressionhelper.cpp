@@ -233,3 +233,17 @@ Expr::ExpressionElement ExpressionHelper::DoFunc(Expr::ExpressionElement& expr)
     return e;
 
 }
+
+Expr::ExpressionElement ExpressionHelper::DoImm(Expr::ExpressionElement& elem)
+{
+    Expr::ExpressionElement e;
+
+    VariableStore::Var temp1 = e.intRep.declareTemporary(); // TODO: Declare with type from function
+
+    e.intRep.loadImm(temp1, elem.v.uval);
+    e.intRep.output(temp1);
+
+    e.elem = Expr::ElementType::kIntRepPlaceHolder;
+
+    return e;
+}

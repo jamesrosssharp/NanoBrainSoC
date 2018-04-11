@@ -38,6 +38,7 @@ The Expression class is used to simplify expressions and generate an intermediat
 #include "intrepcompiler.h"
 
 #include <iostream>
+#include <fstream>
 
 using namespace CodeGen;
 
@@ -54,10 +55,12 @@ CodeGenerator::CodeGenerator(Syntax::Syntagma* toplevel)
 }
 
 
-void CodeGenerator::generate()
+void CodeGenerator::generate(std::string fname)
 {
 
-    std::ostream& of = std::cout;
+    std::ofstream of;
+
+    of.open(fname);
 
     // start generation
 
@@ -70,13 +73,13 @@ void CodeGenerator::generate()
 
     of << "\t.org 0h"               << std::endl;
     of                              << std::endl;
-    of << "_reset:      jump    _start" << std::endl;
+    of << "_reset:" << std::endl << SPACES "jump    _start" << std::endl;
     of << "             .align 4"   << std::endl;
-    of << "_interrupt:  nop"        << std::endl;
+    of << "_interrupt:" << std::endl << SPACES  "nop"        << std::endl;
     of << "             nop"        << std::endl;
-    of << "_exception:  nop"        << std::endl;
+    of << "_exception:" << std::endl << SPACES  "nop"        << std::endl;
     of << "             nop"        << std::endl;
-    of << "_svc:        nop"        << std::endl;
+    of << "_svc:"        << std::endl << SPACES "nop"        << std::endl;
     of << "             nop"        << std::endl;
 
     of << std::endl << std::endl;
@@ -89,7 +92,7 @@ void CodeGenerator::generate()
 
     of << "             call f_main" << std::endl;
 
-    of << "_die:        sleep"      << std::endl;
+    of << "_die:        " << std::endl << SPACES "sleep"      << std::endl;
     of << "             jump _die"  << std::endl;
 
     of << std::endl << std::endl;
@@ -187,7 +190,6 @@ void CodeGenerator::generateFunctionDeclaration(Syntax::FunctionDeclaration* fun
         if (v == nullptr)
             throw std::runtime_error("Function argument not a variable!");
 
-
         // Determine type of variable
 
         const Syntax::Type* t = v->varType();
@@ -274,24 +276,49 @@ void CodeGenerator::generateFunctionDeclaration(Syntax::FunctionDeclaration* fun
     // Generate function prologue. If this function calls any other functions we have
     // to preserve the link register
 
-        // Todo: set up frame pointer
+    bool lrOnStack = false;
 
     if (functionCallsFunctions)
     {
-        // TODO: Preserve link register on stack
+        m_registers16.regs[0].dirty = true;
+        m_registers16.regs[1].dirty = true;
+
+        lrOnStack = true;
+
     }
 
-    // examine registers and preserve all registers above r8 that have been used
+        // Check which registers are dirty and preserve them.
 
-    m_text << functionBody.str();
+    std::vector<int> dirtyRegisters16;
+
+    for (int i = 1; i < 16; i ++)
+    {
+        if (m_registers16.regs[i].dirty)
+            dirtyRegisters16.push_back(i);
+    }
+
+        // adjust stack
+
+        // push registers
+
+    for (int reg : dirtyRegisters16)
+    {
+        m_text << SPACES "stw r" << reg << ", [s8,0]" << std::endl;
+        m_text << SPACES "incw s8" << std::endl;
+    }
+
+    if (lrOnStack)
+    {
+        m_text << SPACES "stspr r0, s8" << std::endl;
+        m_text << SPACES "stw r0, [s8,0]" << std::endl;
+        m_text << SPACES "incw s8" << std::endl;
+        m_text << SPACES "stw r1, [s8,0]" << std::endl;
+        m_text << SPACES "incw s8" << std::endl;
+    }
+
 
     // Generate function epilogue. If this function calls any other function we have to
     // restore the link register.
-
-    if (functionCallsFunctions)
-    {
-        // TODO: restore link register
-    }
 
     // final return
 
@@ -299,10 +326,48 @@ void CodeGenerator::generateFunctionDeclaration(Syntax::FunctionDeclaration* fun
     {
         // Check return type. If it not "void", generate an error / warning
 
-        m_text << "             ret" << std::endl;
+        functionBody << "%EMIT_CLEAN_AND_RET%" << std::endl;
     }
 
+    // Compute clean up epilogue
+
+    std::stringstream epilogue;
+
+        // restore all dirty registers
+
+    if (lrOnStack)
+    {
+        epilogue << SPACES "decw s8"          << std::endl;
+        epilogue << SPACES "ldw r3, [s8,0]"   << std::endl;
+        epilogue << SPACES "decw s8"          << std::endl;
+        epilogue << SPACES "ldw r2, [s8,0]"   << std::endl;
+        epilogue << SPACES "ldspr s1, r2"     << std::endl;
+    }
+
+    for (auto i = dirtyRegisters16.rbegin(); i != dirtyRegisters16.rend(); i++)
+    {
+        epilogue << SPACES "decw s8" << std::endl;
+        epilogue << SPACES "ldw r" << *i << ", [s8, 0]" << std::endl;
+    }
+
+    epilogue << SPACES "ret" << std::endl;
+
+    // Replace all instances of %EMIT_CLEAN_AND_RET% with clean up epilogue
+
+    std::string bodyStr = functionBody.str();
+
+    int pos;
+    while ((pos = bodyStr.find("%EMIT_CLEAN_AND_RET%")) != std::string::npos)
+    {
+        bodyStr.replace(pos, 20, epilogue.str());
+    }
+
+
+    m_text << bodyStr;
+
+
     m_text << std::endl;
+
 
     m_inGlobalScope = true;
 
@@ -603,9 +668,10 @@ void CodeGenerator::generateReturnStatement(const Syntax::ReturnStatement* r,
     // restore all clobbered registers
 
 
-    // emit ret instruction
+    // emit sequence which will be replaced with final cleanup and ret instruction (which may be iret or eret)
+    // once register layout is known.
 
-    ss << "             ret" << std::endl;
+    ss << "%EMIT_CLEAN_AND_RET%" << std::endl;
 
 }
 
@@ -641,8 +707,32 @@ void CodeGenerator::generateAsmStatement(const Syntax::AsmStatement* a, std::str
 
     //  - clobber registers
 
+    const Syntax::RegisterList* clobberRegs = a->getClobberRegisters();
 
-    // Preserve clobbered registers
+    std::vector<int> clobberList;
+
+    for (Syntax::RegisterDescription* r : clobberRegs->getRegisterDescriptions())
+    {
+        std::cout << "RegDesc:" << r->reg() << std::endl;
+
+        Register reg = convertReg(const_cast<char*>(r->reg().c_str()));
+
+        if (reg == Register::None)
+            throw std::runtime_error("Could not parse register in inline asm clobber list!");
+
+        if ((int)reg < 16)
+            clobberList.push_back((int)reg);
+        else
+            throw std::runtime_error("Clobbering SPRs is not yet supported!");
+    }
+
+
+    // Preserve clobbered registers if not empty
+
+    for (int reg : clobberList)
+    {
+        m_registers16.regs[reg].dirty = true;
+    }
 
     // Set up inputs
 
@@ -676,11 +766,150 @@ void CodeGenerator::generateAsmStatement(const Syntax::AsmStatement* a, std::str
         i ++;
     }
 
-
     // Dump asm
 
     ss << SPACES << "//--- Begin inline asm" << std::endl << SPACES << asmStr << std::endl << SPACES "//--- End inline asm" << std::endl;
 
+}
+
+Register CodeGenerator::convertReg(char* reg)
+{
+
+    std::string s(reg);
+
+    for (auto & c: s)
+        c = tolower(c);
+
+    if (s == "r0")
+    {
+        return Register::r0;
+    }
+    else if (s == "r1")
+    {
+        return Register::r1;
+    }
+    else if (s == "r2")
+    {
+        return Register::r2;
+    }
+    else if (s == "r3")
+    {
+        return Register::r3;
+    }
+    else if (s == "r4")
+    {
+        return Register::r4;
+    }
+    else if (s == "r5")
+    {
+        return Register::r5;
+    }
+    else if (s == "r6")
+    {
+        return Register::r6;
+    }
+    else if (s == "r7")
+    {
+        return Register::r7;
+    }
+    else if (s == "r8")
+    {
+        return Register::r8;
+    }
+    else if (s == "r9")
+    {
+        return Register::r9;
+    }
+    else if (s == "r10")
+    {
+        return Register::r10;
+    }
+    else if (s == "r11")
+    {
+        return Register::r11;
+    }
+    else if (s == "r12")
+    {
+        return Register::r12;
+    }
+    else if (s == "r13")
+    {
+        return Register::r13;
+    }
+    else if (s == "r14")
+    {
+        return Register::r14;
+    }
+    else if (s == "r15")
+    {
+        return Register::r15;
+    }
+    else if (s == "s0")
+    {
+        return Register::s0;
+    }
+    else if (s == "s1")
+    {
+        return Register::s1;
+    }
+    else if (s == "s2")
+    {
+        return Register::s2;
+    }
+    else if (s == "s3")
+    {
+        return Register::s3;
+    }
+    else if (s == "s4")
+    {
+        return Register::s4;
+    }
+    else if (s == "s5")
+    {
+        return Register::s5;
+    }
+    else if (s == "s6")
+    {
+        return Register::s6;
+    }
+    else if (s == "s7")
+    {
+        return Register::s7;
+    }
+    else if (s == "s8")
+    {
+        return Register::s8;
+    }
+    else if (s == "s9")
+    {
+        return Register::s9;
+    }
+    else if (s == "s10")
+    {
+        return Register::s10;
+    }
+    else if (s == "s11")
+    {
+        return Register::s11;
+    }
+    else if (s == "s12")
+    {
+        return Register::s12;
+    }
+    else if (s == "s13")
+    {
+        return Register::s13;
+    }
+    else if (s == "s14")
+    {
+        return Register::s14;
+    }
+    else if (s == "s15")
+    {
+        return Register::s15;
+    }
+
+    return Register::None;
 }
 
 void CodeGenerator::generateFunctionCall(const Syntax::FunctionCall* f, std::stringstream& ss)
@@ -693,8 +922,6 @@ void CodeGenerator::generateFunctionCall(const Syntax::FunctionCall* f, std::str
     e.fromSyntaxTree(f);
 
     i = e.generateIntRep();
-
-    std::cout << i << std::endl;
 
     ss << IntRepCompiler::GenerateAssembly(i, m_registers16, false);
 

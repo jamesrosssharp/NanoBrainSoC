@@ -103,7 +103,7 @@ int main(int argc, char** argv) {
 
     CodeGen::CodeGenerator g(s);
 
-    g.generate();
+    g.generate(outputFile);
 
     std::cout << "==================================================" << std::endl;
 

@@ -698,6 +698,11 @@ namespace Syntax
             return m_in;
         }
 
+        const RegisterList* getClobberRegisters() const
+        {
+            return m_clobbers;
+        }
+
     private:
 
         DecoratorList* m_dl;

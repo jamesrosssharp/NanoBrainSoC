@@ -312,9 +312,6 @@ IntRep::IntRep Expression::generateIntRep()
     // The returned expression *should* consist of a single element with all the generated
     // int rep stitched together
 
-
-    std::cout << e << std::endl;
-
     ExpressionElement elem = e.getFinalElement();
 
     return elem.intRep;
@@ -323,8 +320,6 @@ IntRep::IntRep Expression::generateIntRep()
 
 Expression Expression::_generateIntRep()
 {
-
-    std::cout << *this << std::endl;
 
     // Search for sub expressions and evaluate them
 
@@ -384,6 +379,10 @@ Expression Expression::_generateIntRep()
         }
     }
 
+    // Replace constants with intrep
+
+    e = e.doImmediates();
+
     // Reduce function calls
     //
     //  TODO:
@@ -402,6 +401,7 @@ Expression Expression::_generateIntRep()
 
 
     // Return reduced expression
+
 
     return e;
 
@@ -504,4 +504,24 @@ Expression Expression::doFunctionCalls()
 
     return e;
 
+}
+
+Expression Expression::doImmediates()
+{
+    Expression e;
+
+    for (ExpressionElement& elem : m_elements)
+    {
+        if (elem.elem == ElementType::kLiteral)
+        {
+            ExpressionElement immElem = ExpressionHelper::DoImm(elem);
+            e.addElement(immElem);
+        }
+        else
+        {
+            e.addElement(elem);
+        }
+    }
+
+    return e;
 }
