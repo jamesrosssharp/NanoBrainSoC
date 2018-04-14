@@ -92,6 +92,7 @@ void Expression::fromSyntaxTree(const Syntax::Syntagma* expression)
                     e.v.sval = imm->intValue();
                     break;
                 default:
+                    std::cout << (int)imm->immType() << std::endl;
                     throw std::runtime_error("Unknown immediate type!");
             }
 
@@ -169,6 +170,15 @@ void Expression::convertExpressionType(ExpressionElement& e, Syntax::BinaryExpre
             break;
         case Syntax::BinaryExpressionType::ShiftLeft:
             e.elem = ElementType::kShiftLeft;
+            break;
+        case Syntax::BinaryExpressionType::BitwiseAnd:
+            e.elem = ElementType::kAnd;
+            break;
+        case Syntax::BinaryExpressionType::BitwiseOr:
+            e.elem = ElementType::kOr;
+            break;
+        case Syntax::BinaryExpressionType::BitwiseXor:
+            e.elem = ElementType::kXor;
             break;
     }
 }
@@ -398,6 +408,19 @@ Expression Expression::_generateIntRep()
 
     e = e.doOp(ElementType::kPlus, ExpressionHelper::AddVar);
     e = e.doOp(ElementType::kMinus, ExpressionHelper::SubVar);
+    e = e.doOp(ElementType::kShiftLeft, ExpressionHelper::ShlVar);
+    e = e.doOp(ElementType::kShiftRight, ExpressionHelper::ShrVar);
+
+    //< <= 	For relational operators < and ≤ respectively
+    //> >= 	For relational operators > and ≥ respectively
+    //== != 	For relational = and ≠ respectively
+
+    //  & 	Bitwise AND
+    e = e.doOp(ElementType::kAnd, ExpressionHelper::AndVar);
+    // 	^ 	Bitwise XOR (exclusive or)
+    e = e.doOp(ElementType::kXor, ExpressionHelper::XorVar);
+    // 	|
+    e = e.doOp(ElementType::kOr, ExpressionHelper::OrVar);
 
 
     // Return reduced expression

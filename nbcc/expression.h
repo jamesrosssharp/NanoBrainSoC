@@ -47,7 +47,9 @@ namespace Expr
         kLiteral,
         kSymbol,
         kTemporary,
-        kIntRepPlaceHolder
+        kIntRepPlaceHolder,
+        kLiteralIntRepPlaceHolder   // If it's a literal that's been compiled, we may need to coalesce as a
+                                    // pre-optimisation step, so mark it as a separate entity
     };
 
     class Expression;
@@ -67,6 +69,13 @@ namespace Expr
         IntRep::IntRep intRep;
 
         int line_num;
+
+        ExpressionElement()
+        {
+            elem = ElementType::kNone;
+            v.sval = 0;
+            line_num = 0;
+        }
 
     };
 

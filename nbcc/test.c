@@ -35,7 +35,15 @@ void putch(char c)
 
 short myfunc()
 {
-    return (2 + 3) + (4 - 5);
+    return (((2 + 3) + (4 - 5) - 1) & 1) ^ 3;
+}
+
+void myfunc2(short a)
+{
+    if (1)
+    {
+        putch(0x41);
+    }
 }
 
 short main ()
@@ -61,5 +69,7 @@ short main ()
   //  putch(0x42);
   //  putch(0x41);
 
-    putch (0x30 + myfunc());
+    //putch (0x30 + myfunc());
+
+    myfunc2(myfunc());
 }

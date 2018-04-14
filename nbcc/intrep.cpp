@@ -94,6 +94,107 @@ void IntRep::IntRep::subVar(const VariableStore::Var& left, const VariableStore:
 
 }
 
+void IntRep::IntRep::bslVar(const VariableStore::Var& left, uint8_t shift, const VariableStore::Var& out)
+{
+
+    Element e;
+
+    e.element = ElementType::kBsl;
+    e.v1 = left;
+    e.v2 = out;
+    e.immval.v.uval = shift;
+
+    m_elements.push_back(e);
+
+}
+
+void IntRep::IntRep::bsrVar(const VariableStore::Var& left, uint8_t shift, const VariableStore::Var& out)
+{
+
+    Element e;
+
+    e.element = ElementType::kBsr;
+    e.v1 = left;
+    e.v2 = out;
+    e.immval.v.uval = shift;
+
+    m_elements.push_back(e);
+
+}
+
+void IntRep::IntRep::andVar(const VariableStore::Var& left, const VariableStore::Var& right, const VariableStore::Var& out)
+{
+
+    Element e;
+
+    e.element = ElementType::kAnd;
+    e.v1 = left;
+    e.v2 = right;
+    e.v3 = out;
+
+    m_elements.push_back(e);
+
+}
+
+void IntRep::IntRep::xorVar(const VariableStore::Var& left, const VariableStore::Var& right, const VariableStore::Var& out)
+{
+
+    Element e;
+
+    e.element = ElementType::kXor;
+    e.v1 = left;
+    e.v2 = right;
+    e.v3 = out;
+
+    m_elements.push_back(e);
+
+}
+
+void IntRep::IntRep::orVar(const VariableStore::Var& left, const VariableStore::Var& right, const VariableStore::Var& out)
+{
+
+    Element e;
+
+    e.element = ElementType::kOr;
+    e.v1 = left;
+    e.v2 = right;
+    e.v3 = out;
+
+    m_elements.push_back(e);
+
+}
+
+void IntRep::IntRep::test(const VariableStore::Var &var, uint32_t mask)
+{
+    Element e;
+
+    e.element = ElementType::kTest;
+    e.immval.v.uval = mask;
+    e.v1 = var;
+
+    m_elements.push_back(e);
+}
+
+void IntRep::IntRep::jumpZ(const LabelStore::Label &label)
+{
+    Element e;
+
+    e.element = ElementType::kJumpZ;
+    e.label = label;
+
+    m_elements.push_back(e);
+}
+
+void IntRep::IntRep::jumpNZ(const LabelStore::Label &label)
+{
+    Element e;
+
+    e.element = ElementType::kJumpNZ;
+    e.label = label;
+
+    m_elements.push_back(e);
+}
+
 VariableStore::Var IntRep::IntRep::declareTemporary()
 {
 

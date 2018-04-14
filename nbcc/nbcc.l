@@ -99,7 +99,10 @@ int g_str_idx = 0;
 "-"  { return '-'; }
 "*"  { return '*'; }
 "/"  { return '/'; }
+"&"  { return '&'; }
+"|"  { return '|'; }
 "="  { return '='; }
+"^"  { return '^'; }
 
 "<<" { return SHIFT_LEFT; }
 ">>" { return SHIFT_RIGHT; }

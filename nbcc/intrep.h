@@ -25,6 +25,7 @@
 #include "types.h"
 #include "variablestore.h"
 #include "functionstore.h"
+#include "labelstore.h"
 
 #include <iostream>
 #include <stdint.h>
@@ -48,6 +49,14 @@ namespace IntRep
         kOutput,
         kAdd,
         kSub,
+        kBsr,
+        kBsl,
+        kAnd,
+        kOr,
+        kXor,
+        kTest,
+        kJumpZ,
+        kJumpNZ,
 
         kCallFunction
     };
@@ -60,13 +69,15 @@ namespace IntRep
         VariableStore::Var v2;
         VariableStore::Var v3;
 
+        LabelStore::Label label;
+
         ImmediateValue     immval;
 
         FunctionStore::Func    f1;
 
         std::vector<VariableStore::Var> args;
 
-        Element() : v1(0), v2(0), v3(0), f1(0) {}
+        Element() : v1(0), v2(0), v3(0), label(0), f1(0) {}
 
     };
 
@@ -77,9 +88,18 @@ namespace IntRep
         VariableStore::Var  declareTemporary();
         void addVar(const VariableStore::Var& left, const VariableStore::Var& right, const VariableStore::Var& out);
         void subVar(const VariableStore::Var& left, const VariableStore::Var& right, const VariableStore::Var& out);
+        void bslVar(const VariableStore::Var& left, uint8_t shift, const VariableStore::Var& out);
+        void bsrVar(const VariableStore::Var& left, uint8_t shift, const VariableStore::Var& out);
+        void andVar(const VariableStore::Var& left, const VariableStore::Var& right, const VariableStore::Var& out);
+        void xorVar(const VariableStore::Var& left, const VariableStore::Var& right, const VariableStore::Var& out);
+        void orVar(const VariableStore::Var& left, const VariableStore::Var& right, const VariableStore::Var& out);
 
         void loadImm(const VariableStore::Var& var, int32_t intval);
         void loadImm(const VariableStore::Var& var, uint32_t intval);
+
+        void test(const VariableStore::Var& v1, uint32_t mask);
+        void jumpNZ(const LabelStore::Label& label);
+        void jumpZ(const LabelStore::Label& label);
 
         void deleteTemporary(const VariableStore::Var& temp);
 

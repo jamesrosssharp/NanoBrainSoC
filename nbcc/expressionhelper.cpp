@@ -37,6 +37,46 @@ Expr::ExpressionElement ExpressionHelper::SubVar(Expr::ExpressionElement& left, 
 
 }
 
+Expr::ExpressionElement ExpressionHelper::ShlVar(Expr::ExpressionElement& left, Expr::ExpressionElement& right)
+{
+    return ShiftOp(left, right, true);
+}
+
+Expr::ExpressionElement ExpressionHelper::ShrVar(Expr::ExpressionElement& left, Expr::ExpressionElement& right)
+{
+    return ShiftOp(left, right, false);
+}
+
+Expr::ExpressionElement ExpressionHelper::AndVar(Expr::ExpressionElement& left, Expr::ExpressionElement& right)
+{
+    return GenericBinaryOp(left, right,
+                        [] (IntRep::IntRep& intRep, VariableStore::Var& left, VariableStore::Var& right, VariableStore::Var& out)
+                        {
+                            intRep.andVar(left, right, out);
+                        });
+
+}
+
+Expr::ExpressionElement ExpressionHelper::OrVar(Expr::ExpressionElement& left, Expr::ExpressionElement& right)
+{
+    return GenericBinaryOp(left, right,
+                        [] (IntRep::IntRep& intRep, VariableStore::Var& left, VariableStore::Var& right, VariableStore::Var& out)
+                        {
+                            intRep.orVar(left, right, out);
+                        });
+
+}
+
+Expr::ExpressionElement ExpressionHelper::XorVar(Expr::ExpressionElement& left, Expr::ExpressionElement& right)
+{
+    return GenericBinaryOp(left, right,
+                        [] (IntRep::IntRep& intRep, VariableStore::Var& left, VariableStore::Var& right, VariableStore::Var& out)
+                        {
+                            intRep.xorVar(left, right, out);
+                        });
+
+}
+
 Expr::ExpressionElement ExpressionHelper::GenericBinaryOp(Expr::ExpressionElement& left,
                                                           Expr::ExpressionElement& right,
                                         std::function<void (IntRep::IntRep& intrep,
@@ -125,6 +165,7 @@ Expr::ExpressionElement ExpressionHelper::GenericBinaryOp(Expr::ExpressionElemen
 
             break;
         case Expr::ElementType::kIntRepPlaceHolder:
+        case Expr::ElementType::kLiteralIntRepPlaceHolder:
         {
             switch (right.elem)
             {
@@ -154,6 +195,7 @@ Expr::ExpressionElement ExpressionHelper::GenericBinaryOp(Expr::ExpressionElemen
                     break;
                 }
                 case Expr::ElementType::kIntRepPlaceHolder:
+                case Expr::ElementType::kLiteralIntRepPlaceHolder:
                 {
                     e.intRep.assimilate(left.intRep);
                     e.intRep.assimilate(right.intRep);
@@ -243,7 +285,62 @@ Expr::ExpressionElement ExpressionHelper::DoImm(Expr::ExpressionElement& elem)
     e.intRep.loadImm(temp1, elem.v.uval);
     e.intRep.output(temp1);
 
-    e.elem = Expr::ElementType::kIntRepPlaceHolder;
+    e.elem            = Expr::ElementType::kLiteralIntRepPlaceHolder;
+    e.v.uval          = elem.v.uval;
+
+    return e;
+}
+
+Expr::ExpressionElement ExpressionHelper::ShiftOp(Expr::ExpressionElement& left, Expr::ExpressionElement& right, bool shiftLeft)
+{
+    Expr::ExpressionElement e;
+
+    // For the moment, only allow a shift by a literal, which will translate directly to a barrel shift
+    // instruction.
+
+    switch (right.elem)
+    {
+        case Expr::ElementType::kLiteralIntRepPlaceHolder:
+
+            switch (left.elem)
+            {
+                // TODO: literal case should be computed by the compiler
+                case Expr::ElementType::kIntRepPlaceHolder:
+                case Expr::ElementType::kLiteralIntRepPlaceHolder:
+                {
+
+                    e.intRep.assimilate(left.intRep);
+
+                    VariableStore::Var temp1 = left.intRep.getOutputVar();
+
+                    if (temp1 == VariableStore::Var(0))
+                        throw std::runtime_error("Could not link int rep!");
+
+                    VariableStore::Var temp2 = e.intRep.declareTemporary();
+
+                    // TODO: check sign?
+                    if (right.v.uval > 15)
+                        throw std::runtime_error("Cannot shift more than 15 bits");
+
+                    if (shiftLeft)
+                        e.intRep.bslVar(temp1, right.v.uval, temp2);
+                    else
+                        e.intRep.bsrVar(temp1, right.v.uval, temp2);
+
+                    e.intRep.deleteTemporary(temp1);
+
+                    e.intRep.output(temp2);
+
+                    e.elem = Expr::ElementType::kIntRepPlaceHolder;
+
+                    break;
+                }
+            }
+
+            break;
+        default:
+            throw std::runtime_error("Unsupported type!");
+    }
 
     return e;
 }

@@ -545,3 +545,48 @@ void handleGroupedExpression()
 
     g_syntaxStack.push(g);
 }
+
+void handleExpressionBitwiseAnd()
+{
+    // addition
+    handleExpressionArith(Syntax::BinaryExpressionType::BitwiseAnd);
+}
+
+void handleExpressionBitwiseOr()
+{
+    // addition
+    handleExpressionArith(Syntax::BinaryExpressionType::BitwiseOr);
+}
+
+void handleExpressionBitwiseXor()
+{
+    // addition
+    handleExpressionArith(Syntax::BinaryExpressionType::BitwiseXor);
+}
+
+void handleIf1()
+{
+    Syntax::Syntagma* block = g_syntaxStack.pop();
+
+    Syntax::Syntagma* expr = g_syntaxStack.pop();
+
+    Syntax::IfStatement* w = new Syntax::IfStatement(expr, block);
+
+    g_syntaxStack.push(w);
+
+}
+
+void handleIf2()
+{
+    Syntax::Syntagma* statement = g_syntaxStack.pop();
+
+    Syntax::Syntagma* expr = g_syntaxStack.pop();
+
+    // Push the single statement into a block of its own to make it consistent.
+    Syntax::Block* block = new Syntax::Block();
+    block->append(statement);
+
+    Syntax::IfStatement* w = new Syntax::IfStatement(expr, block);
+
+    g_syntaxStack.push(w);
+}

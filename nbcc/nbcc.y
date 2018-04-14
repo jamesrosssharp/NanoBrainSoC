@@ -67,6 +67,9 @@ void yyerror(const char *s);
 %left '/'
 %left SHIFT_RIGHT
 %left SHIFT_LEFT
+%left '&'
+%left '|'
+%left '^'
 
 %%
 
@@ -98,7 +101,7 @@ block_contents: block_contents statement { handleBlock1(); } |
 
 /* statements */
 
-statement: return_statement | while_statement | assigment | declaration | asm_block | expression ';' ;
+statement: return_statement | while_statement | if_statement | assigment | declaration | asm_block | expression ';' ;
 
 /* asm block */
 
@@ -122,8 +125,13 @@ return_statement: RETURN expression ';' { handleReturnStatement(); }
 
 /* while */
 
-while_statement: WHILE '(' expression ')' block ';' { handleWhile1(); } |
+while_statement: WHILE '(' expression ')' block { handleWhile1(); } |
                  WHILE '(' expression ')' ';'       { handleWhile2(); }
+
+/* if */
+
+if_statement: IF '(' expression ')' block { handleIf1(); } |
+              IF '(' expression ')' statement ';' { handleIf2(); }
 
 /* assignment */
 
@@ -143,6 +151,9 @@ expression:
         expression '-' expression { handleExpressionSubtraction(); }   |
         expression '*' expression { handleExpressionMultiplication(); }   |
         expression '/' expression { handleExpressionDivision(); }   |
+        expression '&' expression { handleExpressionBitwiseAnd(); }   |
+        expression '|' expression { handleExpressionBitwiseOr(); }   |
+        expression '^' expression { handleExpressionBitwiseXor(); } |
         expression SHIFT_LEFT expression    { handleExpressionShiftLeft(); } |
         expression SHIFT_RIGHT expression   { handleExpressionShiftRight(); } |
         '(' expression ')'                  { handleGroupedExpression(); } |

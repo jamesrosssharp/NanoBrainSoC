@@ -459,6 +459,16 @@ namespace Syntax
             delete m_block;
         }
 
+        Syntagma* getExpression() const
+        {
+            return m_condition;
+        }
+
+        Block* getBlock() const
+        {
+            return dynamic_cast<Syntax::Block*>(m_block);
+        }
+
         void print(std::ostream& os, int indent) const;
 
     private:

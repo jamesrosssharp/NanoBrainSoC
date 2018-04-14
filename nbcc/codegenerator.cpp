@@ -33,6 +33,7 @@ The Expression class is used to simplify expressions and generate an intermediat
 #include "expression.h"
 #include "variablestore.h"
 #include "functionstore.h"
+#include "labelstore.h"
 
 #include "intrep.h"
 #include "intrepcompiler.h"
@@ -58,9 +59,8 @@ CodeGenerator::CodeGenerator(Syntax::Syntagma* toplevel)
 void CodeGenerator::generate(std::string fname)
 {
 
-    std::ofstream of;
+    std::stringstream ss;
 
-    of.open(fname);
 
     // start generation
 
@@ -71,56 +71,67 @@ void CodeGenerator::generate(std::string fname)
 
     // Emit prologue
 
-    of << "\t.org 0h"               << std::endl;
-    of                              << std::endl;
-    of << "_reset:" << std::endl << SPACES "jump    _start" << std::endl;
-    of << "             .align 4"   << std::endl;
-    of << "_interrupt:" << std::endl << SPACES  "nop"        << std::endl;
-    of << "             nop"        << std::endl;
-    of << "_exception:" << std::endl << SPACES  "nop"        << std::endl;
-    of << "             nop"        << std::endl;
-    of << "_svc:"        << std::endl << SPACES "nop"        << std::endl;
-    of << "             nop"        << std::endl;
+    ss << "\t.org 0h"               << std::endl;
+    ss                              << std::endl;
+    ss << "_reset:" << std::endl << SPACES "jump    _start" << std::endl;
+    ss << "             .align 4"   << std::endl;
+    ss << "_interrupt:" << std::endl << SPACES  "nop"        << std::endl;
+    ss << "             nop"        << std::endl;
+    ss << "_exception:" << std::endl << SPACES  "nop"        << std::endl;
+    ss << "             nop"        << std::endl;
+    ss << "_svc:"        << std::endl << SPACES "nop"        << std::endl;
+    ss << "             nop"        << std::endl;
 
-    of << std::endl << std::endl;
+    ss << std::endl << std::endl;
 
-    of << "_start:"                 << std::endl;
+    ss << "_start:"                 << std::endl;
 
-    of << "             load r0, (_stack_end & 0x0000ffff)" << std::endl;
-    of << "             load r1, (_stack_end & 0xffff0000) >> 16" << std::endl;
-    of << "             ldspr s8, r0" << std::endl;
+    ss << "             load r0, (_stack_end & 0x0000ffff)" << std::endl;
+    ss << "             load r1, (_stack_end & 0xffff0000) >> 16" << std::endl;
+    ss << "             ldspr s8, r0" << std::endl;
 
-    of << "             call f_main" << std::endl;
+    ss << "             call f_main" << std::endl;
 
-    of << "_die:        " << std::endl << SPACES "sleep"      << std::endl;
-    of << "             jump _die"  << std::endl;
+    ss << "_die:        " << std::endl << SPACES "sleep"      << std::endl;
+    ss << "             jump _die"  << std::endl;
 
-    of << std::endl << std::endl;
+    ss << std::endl << std::endl;
 
 
     // Emit data, bss, and text sections
 
+    ss << "// --------------- Text ---------------" << std::endl << std::endl;
+    ss << m_text.str();
 
-    of << "// --------------- Text ---------------" << std::endl << std::endl;
-    of << m_text.str();
+    ss << "// --------------- Data ---------------" << std::endl << std::endl;
+    ss << m_data.str();
 
-    of << "// --------------- Data ---------------" << std::endl << std::endl;
-    of << m_data.str();
-
-    of << m_bss.str();
+    ss << m_bss.str();
 
     // Emit stack
 
-    of << std::endl << std::endl;
+    ss << std::endl << std::endl;
 
-    of << "             .align 100h" << std::endl;
-    of << "_stack_start:"            << std::endl;
-    of << "             .times 100h dw 0x0" << std::endl;
-    of << "_stack_end:  "            << std::endl;
+    ss << "             .align 100h" << std::endl;
+    ss << "_stack_start:"            << std::endl;
+    ss << "             .times 100h dw 0x0" << std::endl;
+    ss << "_stack_end:  "            << std::endl;
 
     // Emit epilogue
 
-    of << "             .end" << std::endl;
+    ss << "             .end" << std::endl;
+
+    // Write to file
+
+    std::ofstream of;
+
+    of.open(fname);
+
+    of << ss.str();
+
+    // Print to stdout
+
+    std::cout << ss.str();
 
 }
 
@@ -173,9 +184,7 @@ void CodeGenerator::generateFunctionDeclaration(Syntax::FunctionDeclaration* fun
 
     // Create a new scope for the function and put the parameters in it
 
-    VariableStore* vstore = VariableStore::getInstance();
-
-    vstore->pushScope(funcname);
+    pushScope(funcname);
 
     const Syntax::FunctionArguments* args = func->arguments();
 
@@ -198,7 +207,7 @@ void CodeGenerator::generateFunctionDeclaration(Syntax::FunctionDeclaration* fun
 
         std::string name = v->name();
 
-        VariableStore::Var var = vstore->declareVar(name, type);
+        VariableStore::Var var = VariableStore::getInstance()->declareVar(name, type);
 
         if (reg < 8)
         {
@@ -263,15 +272,14 @@ void CodeGenerator::generateFunctionDeclaration(Syntax::FunctionDeclaration* fun
     std::stringstream functionBody;
     bool functionCallsFunctions = false;
     bool lastStatementIsReturn = false;
-    int  scopeId = 0;
 
     const Syntax::Block* body = func->body();
 
-    generateBlock(body, functionBody, functionCallsFunctions, lastStatementIsReturn, scopeId);
+    generateBlock(body, functionBody, functionCallsFunctions, lastStatementIsReturn);
 
     // pop scope
 
-    vstore->popScope();
+    popScope();
 
     // Generate function prologue. If this function calls any other functions we have
     // to preserve the link register
@@ -576,15 +584,12 @@ bail:
 
 
 void CodeGenerator::generateBlock(const Syntax::Block *b, std::stringstream &ss,
-                                  bool &callsFunctions, bool& lastStatementIsReturn, int& scopeId)
+                                  bool &callsFunctions, bool& lastStatementIsReturn)
 {
 
     // Create a scope for this block
 
-    std::stringstream scopeSs;
-    scopeSs << "block" << scopeId;
-
-    VariableStore::getInstance()->pushScope(scopeSs.str());
+    pushScope("b");
 
     // process each statement in the block in turn and handle it appropriately
 
@@ -635,6 +640,17 @@ void CodeGenerator::generateBlock(const Syntax::Block *b, std::stringstream &ss,
 
                 break;
             }
+            case Syntax::ElementType::IfStatement:
+            {
+                Syntax::IfStatement* i = dynamic_cast<Syntax::IfStatement*>(statement);
+
+                if (i == nullptr)
+                    throw std::runtime_error("Could not cast to an if statement!");
+
+                generateIfStatement(i, ss, callsFunctions);
+
+                break;
+            }
             default:
             {
                 std::stringstream err;
@@ -646,7 +662,7 @@ void CodeGenerator::generateBlock(const Syntax::Block *b, std::stringstream &ss,
 
     }
 
-    VariableStore::getInstance()->popScope();
+    popScope();
 
 }
 
@@ -927,3 +943,60 @@ void CodeGenerator::generateFunctionCall(const Syntax::FunctionCall* f, std::str
 
 }
 
+void CodeGenerator::generateIfStatement(const Syntax::IfStatement* i, std::stringstream& ss,
+                             bool& callsFunctions)
+{
+    IntRep::IntRep ir;
+
+    Expr::Expression e;
+
+    e.fromSyntaxTree(i->getExpression());
+
+    ir = e.generateIntRep();
+
+    // Get "out" of int rep
+
+    VariableStore::Var v = ir.getOutputVar();
+
+    if (v == VariableStore::Var(0))
+        throw std::runtime_error("Could not get 'out' of int rep");
+
+    // Declare label to jump over block
+
+    LabelStore::Label l = LabelStore::getInstance()->declareTempLab();
+
+    // Generate test and jump to label
+
+    IntRep::IntRep ir2;
+
+    ir2.assimilate(ir);
+
+    ir2.test(v, 0xffff);
+
+    ir2.jumpNZ(l);
+
+    ss << IntRepCompiler::GenerateAssembly(ir2, m_registers16, false);
+
+    // Generate block
+
+    bool dummy;
+
+    generateBlock(i->getBlock(), ss, callsFunctions, dummy);
+
+    // Generate label at end of block
+
+    ss << l->asmName << ":" << std::endl;
+
+}
+
+void CodeGenerator::pushScope(std::string scope)
+{
+    VariableStore::getInstance()->pushScope(scope);
+    LabelStore::getInstance()->pushScope(scope);
+}
+
+void CodeGenerator::popScope()
+{
+    VariableStore::getInstance()->popScope();
+    LabelStore::getInstance()->popScope();
+}

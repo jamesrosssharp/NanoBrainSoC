@@ -47,3 +47,10 @@ void handleRegList1();
 void handleRegList2();
 void handleRegList3();
 void handleGroupedExpression();
+
+void handleExpressionBitwiseAnd();
+void handleExpressionBitwiseOr();
+void handleExpressionBitwiseXor();
+
+void handleIf1();
+void handleIf2();

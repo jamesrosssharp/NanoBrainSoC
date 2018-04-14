@@ -88,9 +88,12 @@ namespace CodeGen
         Type generateType(const Syntax::Type* type, const Syntax::DecoratorList* decorators);
 
         void generateBlock(const Syntax::Block* b, std::stringstream& ss,
-                           bool& callsFunctions, bool& lastStatementIsReturn, int& scopeId);
+                           bool& callsFunctions, bool& lastStatementIsReturn);
 
         void generateReturnStatement(const Syntax::ReturnStatement* r, std::stringstream& ss,
+                                     bool& callsFunctions);
+
+        void generateIfStatement(const Syntax::IfStatement* i, std::stringstream& ss,
                                      bool& callsFunctions);
 
         void generateAsmStatement(const Syntax::AsmStatement* a, std::stringstream& ss);
@@ -101,6 +104,9 @@ namespace CodeGen
         bool inGlobalScope();
 
         Register convertReg(char* reg);
+
+        void pushScope(std::string scope);
+        void popScope();
 
         Syntax::TopLevel* m_toplevel;
 

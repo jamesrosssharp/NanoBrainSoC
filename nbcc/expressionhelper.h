@@ -28,6 +28,14 @@ namespace ExpressionHelper
     Expr::ExpressionElement AddVar(Expr::ExpressionElement& left, Expr::ExpressionElement& right);
     Expr::ExpressionElement SubVar(Expr::ExpressionElement& left, Expr::ExpressionElement& right);
 
+    Expr::ExpressionElement ShlVar(Expr::ExpressionElement& left, Expr::ExpressionElement& right);
+    Expr::ExpressionElement ShrVar(Expr::ExpressionElement& left, Expr::ExpressionElement& right);
+
+    Expr::ExpressionElement AndVar(Expr::ExpressionElement& left, Expr::ExpressionElement& right);
+    Expr::ExpressionElement XorVar(Expr::ExpressionElement& left, Expr::ExpressionElement& right);
+    Expr::ExpressionElement OrVar(Expr::ExpressionElement& left, Expr::ExpressionElement& right);
+
+
     Expr::ExpressionElement DoFunc(Expr::ExpressionElement& expr);
     Expr::ExpressionElement DoImm(Expr::ExpressionElement& expr);
 
@@ -35,5 +43,5 @@ namespace ExpressionHelper
                                             std::function<void (IntRep::IntRep& intrep, VariableStore::Var& left,
                                                                 VariableStore::Var& right,
                                                                 VariableStore::Var& out)> genFunc);
-
+    Expr::ExpressionElement ShiftOp(Expr::ExpressionElement& left, Expr::ExpressionElement& right, bool shiftLeft);
 }

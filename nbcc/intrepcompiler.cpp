@@ -108,6 +108,192 @@ std::string IntRepCompiler::GenerateAssembly(IntRep::IntRep i,
 
                 break;
             }
+            case IntRep::ElementType::kBsl:
+            {
+                // Find reg for op1
+
+                int reg1 = FindRegForVar(registers16, e.v1);
+
+                // Find reg for op2
+
+                int reg2 = FindRegForVar(registers16, e.v2);
+
+                if (reg1 == -1 || reg2 == -1)
+                    throw std::runtime_error("Could not find register");
+
+                // Load op1 into r1
+
+                ss << SPACES << "load r1, r" << reg1 << std::endl;
+
+                // Add op2 to r1
+
+                ss << SPACES << "bsl  r1, " << (e.immval.v.uval & 0xf) << std::endl;
+
+                // Store r0 to output register
+
+                ss << SPACES << "load r" << reg2 << ", r1" << std::endl;
+
+                registers16.regs[1].dirty = true;
+
+            }
+            case IntRep::ElementType::kBsr:
+            {
+                // Find reg for op1
+
+                int reg1 = FindRegForVar(registers16, e.v1);
+
+                // Find reg for op2
+
+                int reg2 = FindRegForVar(registers16, e.v2);
+
+                if (reg1 == -1 || reg2 == -1)
+                    throw std::runtime_error("Could not find register");
+
+                // Load op1 into r1
+
+                ss << SPACES << "load r1, r" << reg1 << std::endl;
+
+                // Add op2 to r1
+
+                ss << SPACES << "bsr  r1, " << (e.immval.v.uval & 0xf) << std::endl;
+
+                // Store r0 to output register
+
+                ss << SPACES << "load r" << reg2 << ", r1" << std::endl;
+
+                registers16.regs[1].dirty = true;
+
+            }
+            case IntRep::ElementType::kAnd:
+            {
+                // Find reg for op1
+
+                int reg1 = FindRegForVar(registers16, e.v1);
+
+                // Find reg for op2
+
+                int reg2 = FindRegForVar(registers16, e.v2);
+
+                // Find reg for output register
+
+                int reg3 = FindRegForVar(registers16, e.v3);
+
+                if (reg1 == -1 || reg2 == -1 || reg3 == -1)
+                    throw std::runtime_error("Could not find register");
+
+                // Load op1 into r1
+
+                ss << SPACES << "load r1, r" << reg1 << std::endl;
+
+                // Add op2 to r1
+
+                ss << SPACES << "and  r1, r" << reg2 << std::endl;
+
+                // Store r1 to output register
+
+                ss << SPACES << "load r" << reg3 << ", r1" << std::endl;
+
+                registers16.regs[1].dirty = true;
+
+                break;
+            }
+            case IntRep::ElementType::kOr:
+            {
+                // Find reg for op1
+
+                int reg1 = FindRegForVar(registers16, e.v1);
+
+                // Find reg for op2
+
+                int reg2 = FindRegForVar(registers16, e.v2);
+
+                // Find reg for output register
+
+                int reg3 = FindRegForVar(registers16, e.v3);
+
+                if (reg1 == -1 || reg2 == -1 || reg3 == -1)
+                    throw std::runtime_error("Could not find register");
+
+                // Load op1 into r1
+
+                ss << SPACES << "load r1, r" << reg1 << std::endl;
+
+                // Add op2 to r1
+
+                ss << SPACES << "or  r1, r" << reg2 << std::endl;
+
+                // Store r1 to output register
+
+                ss << SPACES << "load r" << reg3 << ", r1" << std::endl;
+
+                registers16.regs[1].dirty = true;
+
+                break;
+            }
+            case IntRep::ElementType::kXor:
+            {
+                // Find reg for op1
+
+                int reg1 = FindRegForVar(registers16, e.v1);
+
+                // Find reg for op2
+
+                int reg2 = FindRegForVar(registers16, e.v2);
+
+                // Find reg for output register
+
+                int reg3 = FindRegForVar(registers16, e.v3);
+
+                if (reg1 == -1 || reg2 == -1 || reg3 == -1)
+                    throw std::runtime_error("Could not find register");
+
+                // Load op1 into r1
+
+                ss << SPACES << "load r1, r" << reg1 << std::endl;
+
+                // Add op2 to r1
+
+                ss << SPACES << "xor  r1, r" << reg2 << std::endl;
+
+                // Store r1 to output register
+
+                ss << SPACES << "load r" << reg3 << ", r1" << std::endl;
+
+                registers16.regs[1].dirty = true;
+
+                break;
+            }
+            case IntRep::ElementType::kTest:
+            {
+                // Find reg for op1
+
+                int reg1 = FindRegForVar(registers16, e.v1);
+
+                if (reg1 == -1)
+                    throw std::runtime_error("Could not find register");
+
+                // Load op1 into r1
+
+                ss << SPACES << "test r" << reg1 << ", " << e.immval.v.uval << std::endl;
+
+                break;
+            }
+            case IntRep::ElementType::kJumpZ:
+            {
+                LabelStore::Label l = e.label;
+
+                ss << SPACES << "jumpz " << l->asmName << std::endl;
+
+                break;
+            }
+            case IntRep::ElementType::kJumpNZ:
+            {
+                LabelStore::Label l = e.label;
+
+                ss << SPACES << "jumpnz " << l->asmName << std::endl;
+
+                break;
+            }
             case IntRep::ElementType::kLoadImm:
             {
                 // Find reg to load into

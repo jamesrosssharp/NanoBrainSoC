@@ -51,6 +51,12 @@ namespace CodeGen
         std::vector<Variable> arguments;
     };
 
+    struct Label
+    {
+        std::string name;
+        std::string asmName;
+    };
+
     enum class Register : uint32_t
     {
         r0 = 0,
