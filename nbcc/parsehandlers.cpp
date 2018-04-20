@@ -212,7 +212,10 @@ void handleDeclaration(char* symbol)
 
 void handleWhile1()
 {
-    Syntax::Syntagma* block = g_syntaxStack.pop();
+    Syntax::Block* block = dynamic_cast<Syntax::Block*>(g_syntaxStack.pop());
+
+    if (block == nullptr)
+        throw std::runtime_error("Could not cast to block!");
 
     Syntax::Syntagma* expr = g_syntaxStack.pop();
 
@@ -223,7 +226,10 @@ void handleWhile1()
 
 void handleWhile2()
 {
-    Syntax::Syntagma* block = new Syntax::Block();
+    Syntax::Block* block = dynamic_cast<Syntax::Block*>(g_syntaxStack.pop());
+
+    if (block == nullptr)
+        throw std::runtime_error("Could not cast to block!");
 
     Syntax::Syntagma* expr = g_syntaxStack.pop();
 
@@ -589,4 +595,128 @@ void handleIf2()
     Syntax::IfStatement* w = new Syntax::IfStatement(expr, block);
 
     g_syntaxStack.push(w);
+}
+
+void handleIfElse1()
+{
+    // block block
+    Syntax::Block* elseBlock = dynamic_cast<Syntax::Block*>(g_syntaxStack.pop());
+
+    Syntax::Block* ifBlock = dynamic_cast<Syntax::Block*>(g_syntaxStack.pop());
+
+    Syntax::Syntagma* expr = g_syntaxStack.pop();
+
+    Syntax::IfElseStatement* ie = new Syntax::IfElseStatement(expr, ifBlock, elseBlock);
+
+    g_syntaxStack.push(ie);
+}
+
+void handleIfElse2()
+{
+    // block statement
+    Syntax::Syntagma* elseStatement = g_syntaxStack.pop();
+
+    Syntax::Block* elseBlock = new Syntax::Block();
+    elseBlock->append(elseStatement);
+
+    Syntax::Block* ifBlock = dynamic_cast<Syntax::Block*>(g_syntaxStack.pop());
+
+    Syntax::Syntagma* expr = g_syntaxStack.pop();
+
+    Syntax::IfElseStatement* ie = new Syntax::IfElseStatement(expr, ifBlock, elseBlock);
+
+    g_syntaxStack.push(ie);
+
+}
+
+void handleIfElse3()
+{
+    // statement block
+    Syntax::Block* elseBlock = dynamic_cast<Syntax::Block*>(g_syntaxStack.pop());
+
+    Syntax::Syntagma* ifStatement = g_syntaxStack.pop();
+    Syntax::Block* ifBlock = new Syntax::Block();
+    ifBlock->append(ifStatement);
+
+    Syntax::Syntagma* expr = g_syntaxStack.pop();
+
+    Syntax::IfElseStatement* ie = new Syntax::IfElseStatement(expr, ifBlock, elseBlock);
+
+    g_syntaxStack.push(ie);
+
+}
+
+void handleIfElse4()
+{
+    // statement statement
+    Syntax::Syntagma* elseStatement = g_syntaxStack.pop();
+
+    Syntax::Block* elseBlock = new Syntax::Block();
+    elseBlock->append(elseStatement);
+
+    Syntax::Syntagma* ifStatement = g_syntaxStack.pop();
+
+    Syntax::Block* ifBlock = new Syntax::Block();
+    ifBlock->append(ifStatement);
+
+    Syntax::Syntagma* expr = g_syntaxStack.pop();
+
+    Syntax::IfElseStatement* ie = new Syntax::IfElseStatement(expr, ifBlock, elseBlock);
+
+    g_syntaxStack.push(ie);
+
+}
+
+void handleExpressionPostIncrement(char* symbol)
+{
+    Syntax::Symbol* sym = new Syntax::Symbol(symbol);
+
+    Syntax::UnaryExpression* b = new Syntax::UnaryExpression(Syntax::UnaryExpressionType::PostIncrement, sym);
+
+    g_syntaxStack.push(b);
+
+}
+
+void handleExpressionPostDecrement(char* symbol)
+{
+    Syntax::Symbol* sym = new Syntax::Symbol(symbol);
+
+    Syntax::UnaryExpression* b = new Syntax::UnaryExpression(Syntax::UnaryExpressionType::PostDecrement, sym);
+
+    g_syntaxStack.push(b);
+
+}
+
+void handleExpressionPreIncrement(char* symbol)
+{
+    Syntax::Symbol* sym = new Syntax::Symbol(symbol);
+
+    Syntax::UnaryExpression* b = new Syntax::UnaryExpression(Syntax::UnaryExpressionType::PreIncrement, sym);
+
+    g_syntaxStack.push(b);
+
+}
+
+void handleExpressionPreDecrement(char* symbol)
+{
+    Syntax::Symbol* sym = new Syntax::Symbol(symbol);
+
+    Syntax::UnaryExpression* b = new Syntax::UnaryExpression(Syntax::UnaryExpressionType::PreDecrement, sym);
+
+    g_syntaxStack.push(b);
+}
+
+void handleDoWhile()
+{
+    Syntax::Syntagma* expr = g_syntaxStack.pop();
+
+    Syntax::Block* block = dynamic_cast<Syntax::Block*>(g_syntaxStack.pop());
+
+    if (block == nullptr)
+        throw std::runtime_error("Can't pop block!");
+
+    Syntax::DoWhileStatement* w = new Syntax::DoWhileStatement(expr, block);
+
+    g_syntaxStack.push(w);
+
 }

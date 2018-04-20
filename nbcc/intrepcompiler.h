@@ -11,7 +11,7 @@ class IntRepCompiler
 {
 public:
 
-    static std::string GenerateAssembly(IntRep::IntRep i, CodeGen::Registers16& registers16 /*, m_registers32*/,
+    static std::string GenerateAssembly(const IntRep::IntRep& i, CodeGen::Registers16& registers16 /*, m_registers32*/,
                                         bool isReturnStatement);
 
     static int FindNewReg(CodeGen::Registers16& registers16);

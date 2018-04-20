@@ -1,5 +1,6 @@
 #include "nbsoc.h"
 #include "simulatorwindow.h"
+#include "debuggerdialog.h"
 
 #include <QApplication>
 
@@ -88,6 +89,10 @@ int main(int argc, char** argv)
 
     w.show();
 
+    // Set up debugger
+
+    DebuggerDialog d(&nanobrain, &w);
+
     // Set signals.
 
     nanobrain.onBlitToGfxRam ([&] ()         { w.onBlitToGfxRam(nanobrain); });
@@ -96,6 +101,7 @@ int main(int argc, char** argv)
     nanobrain.onHexWrite([&]   (int hex, uint16_t val)   { w.onHexWrite(hex, val); });
 
     w.onResetButtonPressed([&] (bool pressed) { nanobrain.onResetButtonPressed(pressed); });
+    w.onDebugButtonPressed([&] () { d.show(); });
 
     // Boot cpu
 

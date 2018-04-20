@@ -269,8 +269,13 @@ Expr::ExpressionElement ExpressionHelper::DoFunc(Expr::ExpressionElement& expr)
 
     e.intRep.genFunctionCall(temp1, fhandle, args);
 
+    for (auto a : args)
+        e.intRep.deleteTemporary(a);
+
     e.intRep.output(temp1);
     e.elem = Expr::ElementType::kIntRepPlaceHolder;
+
+
 
     return e;
 
@@ -286,6 +291,26 @@ Expr::ExpressionElement ExpressionHelper::DoImm(Expr::ExpressionElement& elem)
     e.intRep.output(temp1);
 
     e.elem            = Expr::ElementType::kLiteralIntRepPlaceHolder;
+    e.v.uval          = elem.v.uval;
+
+    return e;
+}
+
+Expr::ExpressionElement ExpressionHelper::DoSym(Expr::ExpressionElement& elem)
+{
+    Expr::ExpressionElement e;
+
+    VariableStore::Var temp1 = e.intRep.declareTemporary(); // TODO: Declare with type from function
+
+    VariableStore::Var sym = VariableStore::getInstance()->findVar(elem.symbol);
+
+    if (sym == VariableStore::Var{0})
+        throw std::runtime_error("Could not find variable!");
+
+    e.intRep.loadSym(temp1, sym);
+    e.intRep.output(temp1);
+
+    e.elem            = Expr::ElementType::kIntRepPlaceHolder;
     e.v.uval          = elem.v.uval;
 
     return e;
@@ -343,4 +368,53 @@ Expr::ExpressionElement ExpressionHelper::ShiftOp(Expr::ExpressionElement& left,
     }
 
     return e;
+}
+
+Expr::ExpressionElement ExpressionHelper::PostDecVar(Expr::ExpressionElement& expr)
+{
+    return GenericUnaryOp(expr, []
+                          (IntRep::IntRep& intRep, VariableStore::Var& v, VariableStore::Var& out)
+                            {
+                                intRep.postDecVar(v, out);
+
+                            });
+}
+
+Expr::ExpressionElement ExpressionHelper::PostIncVar(Expr::ExpressionElement& expr)
+{
+    return GenericUnaryOp(expr, [] (IntRep::IntRep& intRep, VariableStore::Var& v, VariableStore::Var& out)
+                            { intRep.postIncVar(v, out); });
+}
+
+Expr::ExpressionElement ExpressionHelper::PreDecVar(Expr::ExpressionElement& expr)
+{
+    return GenericUnaryOp(expr, [] (IntRep::IntRep& intRep, VariableStore::Var& v, VariableStore::Var& out)
+                            { intRep.preDecVar(v, out); });
+}
+
+Expr::ExpressionElement ExpressionHelper::PreIncVar(Expr::ExpressionElement& expr)
+{
+    return GenericUnaryOp(expr, [] (IntRep::IntRep& intRep, VariableStore::Var& v, VariableStore::Var& out)
+                            { intRep.preIncVar(v, out); });
+}
+
+Expr::ExpressionElement ExpressionHelper::GenericUnaryOp(Expr::ExpressionElement& left,
+                                        std::function<void (IntRep::IntRep& intrep, VariableStore::Var& left,
+                                                            VariableStore::Var& out)> genFunc)
+{
+
+    Expr::ExpressionElement e;
+
+    e.elem = Expr::ElementType::kIntRepPlaceHolder;
+
+    e.intRep.assimilate(left.intRep);
+
+    VariableStore::Var v = left.intRep.getOutputVar();
+
+    VariableStore::Var out = e.intRep.declareTemporary();
+
+    genFunc(e.intRep, v, out);
+
+    return e;
+
 }

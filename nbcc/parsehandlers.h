@@ -54,3 +54,15 @@ void handleExpressionBitwiseXor();
 
 void handleIf1();
 void handleIf2();
+
+void handleIfElse1();
+void handleIfElse2();
+void handleIfElse3();
+void handleIfElse4();
+
+void handleExpressionPostIncrement(char *symbol);
+void handleExpressionPostDecrement(char *symbol);
+void handleExpressionPreIncrement(char *symbol);
+void handleExpressionPreDecrement(char *symbol);
+
+void handleDoWhile();

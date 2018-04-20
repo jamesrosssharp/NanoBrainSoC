@@ -13,6 +13,7 @@
 #include "nbsoc.h"
 #include "hexdisplaylabel.h"
 
+
 namespace Ui {
 class SimulatorWindow;
 }
@@ -32,6 +33,7 @@ public:
 
     void onResetButtonPressed(std::function<void (bool)> func) { m_onResetButton = func; }
     void setOnCloseEvent(std::function<void()> func) { m_onCloseEvent = func; }
+    void onDebugButtonPressed(std::function<void()> func) { m_onDebuggerPressed = func; }
 
     void closeEvent(QCloseEvent *ev);
 
@@ -40,6 +42,7 @@ public slots:
 
     void onResetPressed();
     void onResetReleased();
+    void onDebugPressed();
 
 private:
     Ui::SimulatorWindow *ui;
@@ -54,6 +57,8 @@ private:
 
     std::function<void()>       m_onCloseEvent;
     std::function<void (bool)>  m_onResetButton;
+
+    std::function<void()>       m_onDebuggerPressed;
 };
 
 #endif // SIMULATORWINDOW_H

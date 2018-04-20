@@ -10,6 +10,9 @@
 #include <sstream>
 #include <iomanip>
 
+#include <stdlib.h>
+#include <string.h>
+
 //#define DEBUG_INSTRUCTIONS
 
 CPU::CPU(Memory &mem, IOPorts& ioports) :
@@ -18,13 +21,17 @@ CPU::CPU(Memory &mem, IOPorts& ioports) :
     m_cpuThread([] (CPU* cpu) { cpu->runThread(); }, this),
     m_threadExit(false),
     m_threadPause(false),
-    m_sleep(false)
+    m_sleep(false),
+    m_singleStep(false),
+    m_paused(true)
 {
         m_ioports.setCPUInterruptDelegate(this);
 }
 
 void CPU::hardReset()
 {
+    std::unique_lock<std::mutex> lock(m_mutex);
+
     m_pc = 0;
     m_imm = 0;
     m_C = false;
@@ -52,11 +59,302 @@ void CPU::run()
 
 }
 
+void CPU::pause()
+{
+    std::unique_lock<std::mutex> lock(m_mutex);
+
+    if (m_paused) return;
+
+    m_threadPause = true;
+    m_cond.notify_all();
+    m_pauseCond.wait(lock);
+}
+
+void CPU::singleStep()
+{
+    std::unique_lock<std::mutex> lock(m_mutex);
+    m_singleStep = true;
+    m_cond.notify_all();
+    m_singleStepCond.wait(lock);
+}
+
 void CPU::shutDown()
 {
-    m_threadExit = true;
+    {
+        std::unique_lock<std::mutex> lock(m_mutex);
+        m_threadExit = true;
+    }
+
     m_cond.notify_all();
     m_cpuThread.join();
+}
+
+std::string CPU::dumpRegisters()
+{
+    std::unique_lock<std::mutex> lock(m_mutex);
+
+    std::stringstream ss;
+
+    ss << "pc = " << std::hex << std::setw(4) << std::setfill('0') << (m_pc << 1) <<
+          " C=" << m_C << " Z=" << m_Z << std::endl;
+
+    for (int i = 0; i < 16; i ++)
+    {
+        if (i && (i%8 == 0))
+            ss << std::endl;
+        ss << "r" << std::dec << std::setw(2) << std::setfill('0') << i << "=" << std::hex << std::setw(4) << std::setfill('0') << m_gprRegisters[i] << " ";
+    }
+
+    ss << std::endl;
+
+    for (int i = 0; i < 16; i ++)
+    {
+        if (i && (i%4 == 0))
+            ss << std::endl;
+        ss << "s" << std::dec << std::setw(2) << i << "=" << std::hex << std::setw(8) << std::setfill('0') << m_sprRegisters[i] << " ";
+    }
+
+    return ss.str();
+}
+
+std::string CPU::dumpDisas()
+{
+    std::stringstream ss;
+    std::unique_lock<std::mutex> lock(m_mutex);
+
+    uint32_t immediate = 0;
+
+    for (int pc = std::max(0, (int)m_pc - 2*7); pc < m_pc + 2*7; pc ++)
+    {
+        uint16_t instruction = m_memory.readWord(pc);
+
+        UniqueOpCode opcode = UniqueOpCode::None;
+
+        if (pc == m_pc)
+            ss << "==>";
+        else
+            ss << "   ";
+
+        ss << std::hex << std::setw(6) << std::setfill('0') << (pc << 1) << ":\t";
+        ss << std::hex << std::setw(4) << std::setfill('0') << instruction << "\t";
+
+        for (const nbInstructionDecodeInfo& info : instructionInfo)
+        {
+            if ((instruction & info.mask) == info.instruction)
+            {
+                ss << info.string;
+
+                for (int i = 0; i < 8 - strlen(info.string); i++)
+                    ss << " ";
+
+                opcode = info.opcode;
+                break;
+            }
+        }
+
+        // Determine how to format parameters
+
+        bool immSet = false;
+
+        switch (opcode)
+        {
+            case UniqueOpCode::IMM:
+                immSet = true;
+                immediate = (instruction & 0x3fff);
+
+                ss << std::hex << immediate;
+                break;
+            case UniqueOpCode::ADD_IMM:
+            case UniqueOpCode::ADC_IMM:
+            case UniqueOpCode::SUB_IMM:
+            case UniqueOpCode::SBB_IMM:
+            case UniqueOpCode::AND_IMM:
+            case UniqueOpCode::OR_IMM:
+            case UniqueOpCode::XOR_IMM:
+            case UniqueOpCode::CMP_IMM:
+            case UniqueOpCode::TEST_IMM:
+            case UniqueOpCode::LOAD_IMM:
+            case UniqueOpCode::MUL_IMM:
+            case UniqueOpCode::MULS_IMM:
+            case UniqueOpCode::DIV_IMM:
+            case UniqueOpCode::DIVS_IMM:
+            {
+                int regx = (instruction & 0xf0) >> 4;
+                uint32_t immval = (instruction & 0x0f);
+
+                ss << (Register)regx << ", " << std::hex << immval << "\t; " << ((immediate << 4) | immval);
+
+                break;
+            }
+            case UniqueOpCode::ADD_REG:
+            case UniqueOpCode::ADC_REG:
+            case UniqueOpCode::SUB_REG:
+            case UniqueOpCode::SBB_REG:
+            case UniqueOpCode::AND_REG:
+            case UniqueOpCode::OR_REG:
+            case UniqueOpCode::XOR_REG:
+            case UniqueOpCode::CMP_REG:
+            case UniqueOpCode::TEST_REG:
+            case UniqueOpCode::LOAD_REG:
+            case UniqueOpCode::MUL_REG:
+            case UniqueOpCode::MULS_REG:
+            case UniqueOpCode::DIV_REG:
+            case UniqueOpCode::DIVS_REG:
+            case UniqueOpCode::OUT:
+            case UniqueOpCode::IN:
+            {
+                int regx = (instruction & 0xf0) >> 4;
+                int regy = (instruction & 0x0f);
+
+                ss << (Register)regx << ", " << (Register)regy;
+
+                break;
+            }
+            case UniqueOpCode::SLA:
+            case UniqueOpCode::SLX:
+            case UniqueOpCode::SL0:
+            case UniqueOpCode::SL1:
+            case UniqueOpCode::RL:
+            case UniqueOpCode::SRA:
+            case UniqueOpCode::SRX:
+            case UniqueOpCode::SR0:
+            case UniqueOpCode::SR1:
+            case UniqueOpCode::RR:
+            {
+                int regx = (instruction & 0xf0) >> 4;
+
+                ss << (Register)regx;
+
+                break;
+            }
+            case UniqueOpCode::BSL:
+            case UniqueOpCode::BSR:
+            {
+                int regx = (instruction & 0xf0) >> 4;
+                int immval = (instruction & 0x0f);
+
+                ss << (Register)regx << ", " << (Register)immval;
+
+                break;
+            }
+            case UniqueOpCode::FMUL:
+            case UniqueOpCode::FDIV:
+            case UniqueOpCode::FADD:
+            case UniqueOpCode::FSUB:
+            case UniqueOpCode::FCMP:
+            case UniqueOpCode::FINT:
+            case UniqueOpCode::FFLT:
+            {
+                break;
+            }
+            case UniqueOpCode::NOP:
+            case UniqueOpCode::SLEEP:
+            {
+                break;
+            }
+            case UniqueOpCode::JUMP:
+            case UniqueOpCode::JUMPZ:
+            case UniqueOpCode::JUMPC:
+            case UniqueOpCode::JUMPNZ:
+            case UniqueOpCode::JUMPNC:
+            case UniqueOpCode::CALL:
+            case UniqueOpCode::CALLZ:
+            case UniqueOpCode::CALLC:
+            case UniqueOpCode::CALLNZ:
+            case UniqueOpCode::CALLNC:
+            {
+                uint32_t addr = (instruction & 0x1ff);
+
+                ss << addr << "\t;" << (((immediate << 9) | addr) << 1);
+
+                break;
+            }
+            case UniqueOpCode::JUMP_REL:
+            case UniqueOpCode::JUMPZ_REL:
+            case UniqueOpCode::JUMPC_REL:
+            case UniqueOpCode::JUMPNZ_REL:
+            case UniqueOpCode::JUMPNC_REL:
+            case UniqueOpCode::CALL_REL:
+            case UniqueOpCode::CALLZ_REL:
+            case UniqueOpCode::CALLC_REL:
+            case UniqueOpCode::CALLNZ_REL:
+            case UniqueOpCode::CALLNC_REL:
+            {
+                int32_t addr = (instruction & 0x1ff);
+
+                if (addr & 0x100)
+                    addr |= 0xfe00;
+
+                ss << addr << "\t; " << ((pc + (int)addr) << 1);
+
+                break;
+            }
+            case UniqueOpCode::SVC:
+            case UniqueOpCode::RET:
+            case UniqueOpCode::RETI:
+            case UniqueOpCode::RETE:
+            {
+                break;
+            }
+            case UniqueOpCode::LDW_IMM:
+            case UniqueOpCode::STW_IMM:
+            {
+                int regx = (instruction & 0xf0) >> 4;
+                int immVal = (immediate << 4) | (instruction & 0x0f);
+                int regi = (instruction & 0x300) >> 8;
+
+                ss << (Register)regx << ", [" << (Register)(regi + 16 + 8) << ", " << immVal << "]";
+
+                break;
+            }
+            case UniqueOpCode::LDW_REG:
+            case UniqueOpCode::STW_REG:
+            {
+                int regx = (instruction & 0xf0) >> 4;
+                int regy = (instruction & 0x0f);
+                int regi = (instruction & 0x300) >> 8;
+
+                ss << (Register)regx << ", [" << (Register)(regi + 16 + 8) << ", " << (Register)regy << "]";
+
+                break;
+            }
+            case UniqueOpCode::LDSPR:
+            {
+                int regx = (instruction & 0xe0) >> 4;
+                int regy = (instruction & 0x0f);
+
+                ss << (Register)(regx + 16) << ", " << (Register)regy;
+
+                break;
+            }
+            case UniqueOpCode::STSPR:
+            {
+                int regx = (instruction & 0xe0) >> 4;
+                int regy = (instruction & 0x0f);
+
+                ss << (Register)regx << ", " << (Register)(regy + 16);
+
+                break;
+            }
+            case UniqueOpCode::INCW:
+            case UniqueOpCode::DECW:
+            {
+                int regx = (instruction & 0xf0) >> 4;
+
+                ss << (Register)(regx + 16);
+
+                break;
+            }
+        }
+
+        if (! immSet)
+            immediate = 0;
+
+        ss << std::endl;
+    }
+
+    return ss.str();
+
 }
 
 void CPU::setIRQ(bool level)
@@ -65,13 +363,15 @@ void CPU::setIRQ(bool level)
     {
         m_interrupt = true;
         // wake sleeping thread.
-        m_cond.notify_all();
+        if (! m_paused)
+            m_cond.notify_all();
     }
     else
     {
         m_interrupt = false;
         // wake sleeping thread.
-        m_cond.notify_all();
+        if (! m_paused)
+            m_cond.notify_all();
     }
 }
 
@@ -84,21 +384,36 @@ void CPU::runThread()
 
     while (! m_threadExit)
     {
-        if (m_threadPause)
-        {
-            m_threadPause = false;
-            std::unique_lock<std::mutex> lock(m_mutex);
-            m_cond.wait(lock);
-        }
 
-        if (m_sleep)
         {
             std::unique_lock<std::mutex> lock(m_mutex);
-            m_cond.wait(lock);
-            m_sleep = false;
+
+            if (m_sleep)
+            {
+                if (! m_paused)
+                    m_cond.wait(lock);
+                m_sleep = false;
+            }
         }
 
-        clockTick();
+        {
+            std::unique_lock<std::mutex> lock(m_mutex);
+
+            if (m_threadPause)
+            {
+                m_paused = true;
+                m_threadPause = false;
+                m_pauseCond.notify_all();
+                m_cond.wait(lock);
+            }
+        }
+
+        {
+            std::unique_lock<std::mutex> lock(m_mutex);
+
+            m_paused = false;
+            clockTick();
+        }
 
         struct timespec tm1, tm2;
 
@@ -106,6 +421,17 @@ void CPU::runThread()
         tm1.tv_nsec = 20;
         nanosleep(&tm1, &tm2);
         //usleep(1000);
+
+        {
+            std::unique_lock<std::mutex> lock(m_mutex);
+            if (m_singleStep)
+            {
+                m_singleStep = false;
+                m_paused = true;
+                m_singleStepCond.notify_all();
+                m_cond.wait(lock);
+            }
+        }
     }
 
 }
@@ -1080,7 +1406,7 @@ void CPU::executeInstruction()
         }
         case UniqueOpCode::INCW:
         {
-            int regx = (m_instruction & 0xe0) >> 4;
+            int regx = (m_instruction & 0xf0) >> 4;
 
             m_sprRegisters[regx] += 2;
 
@@ -1090,7 +1416,7 @@ void CPU::executeInstruction()
         }
         case UniqueOpCode::DECW:
         {
-            int regx = (m_instruction & 0xe0) >> 4;
+            int regx = (m_instruction & 0xf0) >> 4;
 
             m_sprRegisters[regx] -= 2;
 

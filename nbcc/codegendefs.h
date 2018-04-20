@@ -33,6 +33,9 @@ namespace CodeGen
     {
         std::string name;
         std::string asmName;
+
+        std::string shadowsVar;
+
         Type type;
 
         union

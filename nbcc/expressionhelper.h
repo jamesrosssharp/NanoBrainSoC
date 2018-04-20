@@ -35,13 +35,23 @@ namespace ExpressionHelper
     Expr::ExpressionElement XorVar(Expr::ExpressionElement& left, Expr::ExpressionElement& right);
     Expr::ExpressionElement OrVar(Expr::ExpressionElement& left, Expr::ExpressionElement& right);
 
-
     Expr::ExpressionElement DoFunc(Expr::ExpressionElement& expr);
     Expr::ExpressionElement DoImm(Expr::ExpressionElement& expr);
+    Expr::ExpressionElement DoSym(Expr::ExpressionElement& expr);
+
+    Expr::ExpressionElement PostDecVar(Expr::ExpressionElement& expr);
+    Expr::ExpressionElement PostIncVar(Expr::ExpressionElement& expr);
+    Expr::ExpressionElement PreDecVar(Expr::ExpressionElement& expr);
+    Expr::ExpressionElement PreIncVar(Expr::ExpressionElement& expr);
 
     Expr::ExpressionElement GenericBinaryOp(Expr::ExpressionElement& left, Expr::ExpressionElement& right,
                                             std::function<void (IntRep::IntRep& intrep, VariableStore::Var& left,
                                                                 VariableStore::Var& right,
                                                                 VariableStore::Var& out)> genFunc);
+
+    Expr::ExpressionElement GenericUnaryOp(Expr::ExpressionElement& left,
+                                            std::function<void (IntRep::IntRep& intrep, VariableStore::Var& left,
+                                                                VariableStore::Var& out)> genFunc);
+
     Expr::ExpressionElement ShiftOp(Expr::ExpressionElement& left, Expr::ExpressionElement& right, bool shiftLeft);
 }

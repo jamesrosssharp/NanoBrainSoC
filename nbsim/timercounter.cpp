@@ -144,7 +144,6 @@ void TimerCounter::outPort(uint16_t reg, uint16_t value)
         case TimerReg::Status:
             if (value & kStatusInterrupt)  // write 1 to clear
             {
-                printf("Clearing bit\n");
                 m_status &= ~kStatusInterrupt;
 
                 if (m_control & kControlInterruptEnable)

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <iostream>
+#include <iomanip>
 
 enum class Register : uint32_t
 {
@@ -207,8 +208,8 @@ inline std::ostream& operator << (std::ostream& os, const Register& r)
     else
     {
         if ((uint32_t)r < 16)
-            os << "r" << (uint32_t)r;
+            os << "r" << std::dec << std::setw(2) << std::setfill('0') << (uint32_t)r;
         else
-            os << "s" << ((uint32_t)r - 16);
+            os << "s" << std::dec << std::setw(2) << std::setfill('0') << ((uint32_t)r - 16);
     }
 }

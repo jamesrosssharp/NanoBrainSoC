@@ -86,8 +86,8 @@ void CodeGenerator::generate(std::string fname)
 
     ss << "_start:"                 << std::endl;
 
-    ss << "             load r0, (_stack_end & 0x0000ffff)" << std::endl;
-    ss << "             load r1, (_stack_end & 0xffff0000) >> 16" << std::endl;
+    ss << "             load r0, (_stack_start & 0x0000ffff)" << std::endl;
+    ss << "             load r1, (_stack_start & 0xffff0000) >> 16" << std::endl;
     ss << "             ldspr s8, r0" << std::endl;
 
     ss << "             call f_main" << std::endl;
@@ -175,6 +175,12 @@ void CodeGenerator::generateFunctionDeclaration(Syntax::FunctionDeclaration* fun
     funcname += f.name;
 
     f.asmName = funcname;
+
+    const Syntax::Type* returnType = dynamic_cast<const Syntax::Type*>(func->returnType());
+
+    Type rt = generateType(returnType, nullptr);
+
+    f.returnType = rt;
 
     FunctionStore* fstore = FunctionStore::getInstance();
 
@@ -317,7 +323,7 @@ void CodeGenerator::generateFunctionDeclaration(Syntax::FunctionDeclaration* fun
 
     if (lrOnStack)
     {
-        m_text << SPACES "stspr r0, s8" << std::endl;
+        m_text << SPACES "stspr r0, s1" << std::endl;
         m_text << SPACES "stw r0, [s8,0]" << std::endl;
         m_text << SPACES "incw s8" << std::endl;
         m_text << SPACES "stw r1, [s8,0]" << std::endl;
@@ -651,6 +657,47 @@ void CodeGenerator::generateBlock(const Syntax::Block *b, std::stringstream &ss,
 
                 break;
             }
+            case Syntax::ElementType::IfElseStatement:
+            {
+                Syntax::IfElseStatement* i = dynamic_cast<Syntax::IfElseStatement*>(statement);
+
+                if (i == nullptr)
+                    throw std::runtime_error("Could not cast to an if else statement!");
+
+                generateIfElseStatement(i, ss, callsFunctions);
+
+                break;
+            }
+            case Syntax::ElementType::WhileStatement:
+            {
+                Syntax::WhileStatement* w = dynamic_cast<Syntax::WhileStatement*>(statement);
+
+                if (w == nullptr)
+                    throw std::runtime_error("Could not cast to an if else statement!");
+
+                generateWhileStatement(w, ss, callsFunctions);
+
+                break;
+            }
+            case Syntax::ElementType::DoWhileStatement:
+            {
+                Syntax::DoWhileStatement* w = dynamic_cast<Syntax::DoWhileStatement*>(statement);
+
+                if (w == nullptr)
+                    throw std::runtime_error("Could not cast to a DoWhile statement!");
+
+                generateDoWhileStatement(w, ss, callsFunctions);
+
+                break;
+            }
+            case Syntax::ElementType::UnaryExpression:
+            case Syntax::ElementType::BinaryExpression:
+            {
+
+                buildAndCheckStandaloneExpression(statement, ss, callsFunctions);
+
+                break;
+            }
             default:
             {
                 std::stringstream err;
@@ -729,8 +776,6 @@ void CodeGenerator::generateAsmStatement(const Syntax::AsmStatement* a, std::str
 
     for (Syntax::RegisterDescription* r : clobberRegs->getRegisterDescriptions())
     {
-        std::cout << "RegDesc:" << r->reg() << std::endl;
-
         Register reg = convertReg(const_cast<char*>(r->reg().c_str()));
 
         if (reg == Register::None)
@@ -973,7 +1018,7 @@ void CodeGenerator::generateIfStatement(const Syntax::IfStatement* i, std::strin
 
     ir2.test(v, 0xffff);
 
-    ir2.jumpNZ(l);
+    ir2.jumpZ(l);
 
     ss << IntRepCompiler::GenerateAssembly(ir2, m_registers16, false);
 
@@ -989,6 +1034,60 @@ void CodeGenerator::generateIfStatement(const Syntax::IfStatement* i, std::strin
 
 }
 
+void CodeGenerator::generateIfElseStatement(const Syntax::IfElseStatement* i, std::stringstream& ss,
+                                            bool& callsFunctions)
+{
+
+    IntRep::IntRep ir;
+
+    Expr::Expression e;
+
+    e.fromSyntaxTree(i->getExpression());
+
+    ir = e.generateIntRep();
+
+    // Get "out" of int rep
+
+    VariableStore::Var v = ir.getOutputVar();
+
+    if (v == VariableStore::Var(0))
+        throw std::runtime_error("Could not get 'out' of int rep");
+
+    // Declare label to jump over block and jump when done the if part
+
+    LabelStore::Label l = LabelStore::getInstance()->declareTempLab();
+    LabelStore::Label l2 = LabelStore::getInstance()->declareTempLab();
+
+    // Generate test and jump to label
+
+    IntRep::IntRep ir2;
+
+    ir2.assimilate(ir);
+
+    ir2.test(v, 0xffff);
+
+    ir2.jumpZ(l);
+
+    ss << IntRepCompiler::GenerateAssembly(ir2, m_registers16, false);
+
+    // Generate block
+
+    bool dummy;
+
+    generateBlock(i->getIfBlock(), ss, callsFunctions, dummy);
+
+    ss << SPACES << "jump " << l2->asmName << std::endl;
+
+    // Generate label at end of block
+
+    ss << l->asmName << ":" << std::endl;
+
+    generateBlock(i->getElseBlock(), ss, callsFunctions, dummy);
+
+    ss << l2->asmName << ":" << std::endl;
+
+}
+
 void CodeGenerator::pushScope(std::string scope)
 {
     VariableStore::getInstance()->pushScope(scope);
@@ -1000,3 +1099,123 @@ void CodeGenerator::popScope()
     VariableStore::getInstance()->popScope();
     LabelStore::getInstance()->popScope();
 }
+
+void CodeGenerator::generateWhileStatement(const Syntax::WhileStatement* w, std::stringstream& ss,
+                             bool& callsFunctions)
+{
+    IntRep::IntRep ir;
+
+    Expr::Expression e;
+
+    e.fromSyntaxTree(w->getExpression());
+
+    ir = e.generateIntRep();
+
+    // Get "out" of int rep
+
+    VariableStore::Var v = ir.getOutputVar();
+
+    if (v == VariableStore::Var(0))
+        throw std::runtime_error("Could not get 'out' of int rep");
+
+    // Declare label to jump over block
+
+    LabelStore::Label l = LabelStore::getInstance()->declareTempLab();
+    LabelStore::Label l2 = LabelStore::getInstance()->declareTempLab();
+
+    // Generate test and jump to label
+
+    IntRep::IntRep ir2;
+
+    ir2.assimilate(ir);
+
+    ir2.test(v, 0xffff);
+
+    ir2.jumpZ(l);
+
+    ss << l2->asmName << ":" << std::endl;
+
+    ss << IntRepCompiler::GenerateAssembly(ir2, m_registers16, false);
+
+    // Generate block
+
+    bool dummy;
+
+    generateBlock(w->getBlock(), ss, callsFunctions, dummy);
+
+    ss << SPACES "jump " << l2->asmName << std::endl;
+
+    // Generate label at end of block
+
+    ss << l->asmName << ":" << std::endl;
+
+}
+
+void CodeGenerator::generateDoWhileStatement(const Syntax::DoWhileStatement* w, std::stringstream& ss,
+                             bool& callsFunctions)
+{
+    IntRep::IntRep ir;
+
+    Expr::Expression e;
+
+    e.fromSyntaxTree(w->getExpression());
+
+    ir = e.generateIntRep();
+
+    std::cout << ir << std::endl;
+
+    // Get "out" of int rep
+
+    VariableStore::Var v = ir.getOutputVar();
+
+    if (v == VariableStore::Var(0))
+        throw std::runtime_error("Could not get 'out' of int rep");
+
+    // Declare label to jump over block
+
+    LabelStore::Label l = LabelStore::getInstance()->declareTempLab();
+
+    // Generate test and jump to label
+
+    IntRep::IntRep ir2;
+
+    ir2.assimilate(ir);
+
+    ir2.test(v, 0xffff);
+
+    ir2.jumpNZ(l);
+
+    ss << l->asmName << ":" << std::endl;
+
+    // Generate block
+
+    bool dummy;
+
+    generateBlock(w->getBlock(), ss, callsFunctions, dummy);
+
+    ss << IntRepCompiler::GenerateAssembly(ir2, m_registers16, false);
+
+}
+
+
+
+void CodeGenerator::buildAndCheckStandaloneExpression(const Syntax::Syntagma* statement,
+                                                      std::stringstream& ss,
+                                                      bool& callFunctions)
+{
+
+        Expr::Expression e;
+
+        e.fromSyntaxTree(statement);
+
+        IntRep::IntRep i;
+
+        i = e.generateIntRep();
+
+        // Todo: check if the expression has any effect?
+
+        ss << IntRepCompiler::GenerateAssembly(i, m_registers16, false);
+
+
+}
+

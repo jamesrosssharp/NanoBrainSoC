@@ -18,6 +18,8 @@ public:
 
     void hardReset();
     void run();
+    void pause();
+    void singleStep();
     void shutDown();
 
     void runThread();
@@ -25,6 +27,9 @@ public:
     void holdInReset(bool hold);
 
     virtual void setIRQ(bool level) override;
+
+    std::string dumpRegisters();
+    std::string dumpDisas();
 
 private:
 
@@ -62,10 +67,16 @@ private:
     std::mutex m_mutex;
     std::condition_variable m_cond;
 
+    std::condition_variable m_pauseCond;
+    std::condition_variable m_singleStepCond;
+
     std::thread m_cpuThread;
 
     bool m_threadExit;
     volatile bool m_threadPause;
+    bool m_singleStep;
+
+    bool m_paused;
 
     bool m_sleep;
 };

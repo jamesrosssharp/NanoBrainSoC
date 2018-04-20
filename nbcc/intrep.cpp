@@ -50,6 +50,48 @@ std::ostream& operator << (std::ostream& os, const IntRep::Element& e)
         case IntRep::ElementType::kCallFunction:
             os << "CALL " << *e.f1;
             break;
+        case IntRep::ElementType::kSub:
+            os << "SUB " << *e.v1 << " " << *e.v2 << " " << *e.v3;
+            break;
+        case IntRep::ElementType::kBsr:
+            os << "BSR ";
+            break;
+        case IntRep::ElementType::kBsl:
+            os << "BSL ";
+            break;
+        case IntRep::ElementType::kAnd:
+            os << "AND " << *e.v1 << " " << *e.v2 << " " << *e.v3;
+            break;
+        case IntRep::ElementType::kOr:
+            os << "OR " << *e.v1 << " " << *e.v2 << " " << *e.v3;
+            break;
+        case IntRep::ElementType::kXor:
+            os << "XOR " << *e.v1 << " " << *e.v2 << " " << *e.v3;
+            break;
+        case IntRep::ElementType::kTest:
+            os << "TEST ";
+            break;
+        case IntRep::ElementType::kJumpZ:
+            os << "JUMPZ ";
+            break;
+        case IntRep::ElementType::kJumpNZ:
+            os << "JUMPNZ ";
+            break;
+        case IntRep::ElementType::kLoadSym:
+            os << "LOADSYM ";
+            break;
+        case IntRep::ElementType::kStoreSym:
+            os << "STORESYM ";
+            break;
+        case IntRep::ElementType::kInc:
+            os << "INC " ;
+            break;
+        case IntRep::ElementType::kDec:
+            os << "DEC ";
+            break;
+        case IntRep::ElementType::kLoadVar:
+            os << "LOADVAR ";
+            break;
     }
 
     return os;
@@ -257,6 +299,15 @@ void IntRep::IntRep::loadImm(const VariableStore::Var& var, ImmediateValue& v)
     m_elements.push_back(e);
 }
 
+void IntRep::IntRep::loadSym(VariableStore::Var& temp, VariableStore::Var& sym)
+{
+    Element e;
+    e.element = ElementType::kLoadSym;
+    e.v1 = temp;
+    temp->shadowsVar = sym->name;
+    e.v2 = sym;
+    m_elements.push_back(e);
+}
 
 void IntRep::IntRep::output(const VariableStore::Var& out)
 {
@@ -306,5 +357,140 @@ void IntRep::IntRep::assimilate(const IntRep& i)
 
         m_elements.push_back(e);
     }
+}
+
+void IntRep::IntRep::postDecVar(const VariableStore::Var& temp, const VariableStore::Var& out)
+{
+    // get old value and store it in out
+
+    loadVar(out, temp);
+
+    // increment var
+
+    decVar(temp);
+
+    // store it back to original var
+
+    VariableStore::Var vorig = VariableStore::getInstance()->findVar(temp->shadowsVar);
+
+    if (vorig == VariableStore::Var{0})
+        throw std::runtime_error("Can't find original var!");
+
+    storeSym(temp, vorig);
+
+    output(out);
+
+}
+
+void IntRep::IntRep::postIncVar(const VariableStore::Var& temp, const VariableStore::Var& out)
+{
+    // get old value and store it in out
+
+    loadVar(out, temp);
+
+    // increment var
+
+    incVar(temp);
+
+    // store it back to original var
+
+    VariableStore::Var vorig = VariableStore::getInstance()->findVar(temp->shadowsVar);
+
+    if (vorig == VariableStore::Var{0})
+        throw std::runtime_error("Can't find original var!");
+
+    storeSym(temp, vorig);
+
+    output(out);
+
+}
+
+void IntRep::IntRep::preDecVar(const VariableStore::Var& temp, const VariableStore::Var& out)
+{
+    // get old value and store it in out
+
+    // increment var
+
+    decVar(temp);
+
+    // store it back to original var
+
+    VariableStore::Var vorig = VariableStore::getInstance()->findVar(temp->shadowsVar);
+
+    if (vorig == VariableStore::Var{0})
+        throw std::runtime_error("Can't find original var!");
+
+    storeSym(temp, vorig);
+
+    loadVar(out, temp);
+
+    output(out);
+
+}
+
+void IntRep::IntRep::preIncVar(const VariableStore::Var& temp, const VariableStore::Var& out)
+{
+    // get old value and store it in out
+
+    incVar(temp);
+
+    // store it back to original var
+
+    VariableStore::Var vorig = VariableStore::getInstance()->findVar(temp->shadowsVar);
+
+    if (vorig == VariableStore::Var{0})
+        throw std::runtime_error("Can't find original var!");
+
+    storeSym(temp, vorig);
+
+    loadVar(out, temp);
+
+    output(out);
+}
+
+void IntRep::IntRep::loadVar(const VariableStore::Var& src, const VariableStore::Var& dest)
+{
+    Element e;
+
+    e.element = ElementType::kLoadVar;
+    e.v1 = src;
+    e.v2 = dest;
+
+    m_elements.push_back(e);
+}
+
+void IntRep::IntRep::incVar(const VariableStore::Var& v)
+{
+
+    Element e;
+
+    e.element = ElementType::kInc;
+    e.v1 = v;
+
+    m_elements.push_back(e);
+
+}
+
+void IntRep::IntRep::decVar(const VariableStore::Var& v)
+{
+
+    Element e;
+
+    e.element = ElementType::kDec;
+    e.v1 = v;
+
+    m_elements.push_back(e);
+}
+
+void IntRep::IntRep::storeSym(const VariableStore::Var& src, const VariableStore::Var& dest)
+{
+    Element e;
+
+    e.element = ElementType::kStoreSym;
+    e.v1 = src;
+    e.v2 = dest;
+
+    m_elements.push_back(e);
+
 }
 

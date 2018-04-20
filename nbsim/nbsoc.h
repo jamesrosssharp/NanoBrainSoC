@@ -27,6 +27,8 @@ public:
     void start();
     void shutDown();
 
+    CPU* getCPU() { return &m_cpu; }
+
 private:
 
 

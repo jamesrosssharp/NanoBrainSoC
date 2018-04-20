@@ -95,6 +95,18 @@ void UnaryExpression::print(std::ostream &os, int indent) const
         case UnaryExpressionType::Negation:
             os << " - ";
             break;
+        case UnaryExpressionType::PostDecrement:
+            os << "Post --";
+            break;
+        case UnaryExpressionType::PostIncrement:
+            os << "Post ++";
+            break;
+        case UnaryExpressionType::PreDecrement:
+            os << "Pre --";
+            break;
+        case UnaryExpressionType::PreIncrement:
+            os << "Pre ++";
+            break;
     }
 
     os << std::endl;
@@ -280,6 +292,17 @@ void WhileStatement::print(std::ostream &os, int indent) const
 
 }
 
+void DoWhileStatement::print(std::ostream &os, int indent) const
+{
+    PrintIndent(os, indent);
+
+    os << "DO_WHILE_STATEMENT" << std::endl;
+
+    m_condition->print(os, indent + 1);
+    m_block->print(os, indent + 1);
+
+}
+
 void TopLevel::print(std::ostream &os, int indent) const
 {
     PrintIndent(os, indent);
@@ -381,4 +404,19 @@ void GroupedExpression::print(std::ostream &os, int indent) const
 
     if (m_expression != nullptr)
         m_expression->print(os, indent + 1);
+}
+
+void IfElseStatement::print(std::ostream &os, int indent) const
+{
+    PrintIndent(os, indent);
+
+    os << "IF" << std::endl;
+
+    m_ifBlock->print(os, indent + 1);
+
+    PrintIndent(os, indent);
+
+    os << "ELSE" << std::endl;
+
+    m_elseBlock->print(os, indent + 1);
 }

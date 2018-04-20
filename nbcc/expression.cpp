@@ -91,6 +91,10 @@ void Expression::fromSyntaxTree(const Syntax::Syntagma* expression)
                     e.type.type = BuiltInType::kInt;
                     e.v.sval = imm->intValue();
                     break;
+                case ImmediateType::kChar:
+                    e.type.type = BuiltInType::kChar;
+                    e.v.uval = parseCharLiteral(imm->stringValue());
+                    break;
                 default:
                     std::cout << (int)imm->immType() << std::endl;
                     throw std::runtime_error("Unknown immediate type!");
@@ -142,13 +146,26 @@ void Expression::fromSyntaxTree(const Syntax::Syntagma* expression)
 
             break;
         }
-        //case Syntax::ElementType::UnaryExpression:
+        case Syntax::ElementType::UnaryExpression:
+        {
             // with a unary expression
 
-        //    break;
-        //case Syntax::ElementType::FunctionCall:
+            const Syntax::UnaryExpression* ue = dynamic_cast<const Syntax::UnaryExpression*>(expression);
 
-        //    break;
+            if (ue == nullptr)
+                throw std::runtime_error("Cannot cast unary expression!");
+
+            fromSyntaxTree(ue->expression());
+
+            ExpressionElement e;
+            e.line_num = expression->linenum();
+
+            convertUnaryExpressionType(e, ue->unaryExpressionType());
+
+            m_elements.push_back(e);
+
+            break;
+        }
         default:
         {
             std::stringstream s;
@@ -179,6 +196,34 @@ void Expression::convertExpressionType(ExpressionElement& e, Syntax::BinaryExpre
             break;
         case Syntax::BinaryExpressionType::BitwiseXor:
             e.elem = ElementType::kXor;
+            break;
+    }
+}
+
+void Expression::convertUnaryExpressionType(ExpressionElement& e, Syntax::UnaryExpressionType type)
+{
+    switch(type)
+    {
+        case Syntax::UnaryExpressionType::BitwiseNot:
+            e.elem = ElementType::kUnaryBitwiseNot;
+            break;
+        case Syntax::UnaryExpressionType::LogicalNot:
+            e.elem = ElementType::kUnaryLogicalNot;
+            break;
+        case Syntax::UnaryExpressionType::Negation:
+            e.elem = ElementType::kUnaryNegation;
+            break;
+        case Syntax::UnaryExpressionType::PostDecrement:
+            e.elem = ElementType::kPostDecrement;
+            break;
+        case Syntax::UnaryExpressionType::PostIncrement:
+            e.elem = ElementType::kPostIncrement;
+            break;
+        case Syntax::UnaryExpressionType::PreDecrement:
+            e.elem = ElementType::kPreDecrement;
+            break;
+        case Syntax::UnaryExpressionType::PreIncrement:
+            e.elem = ElementType::kPreIncrement;
             break;
     }
 }
@@ -261,6 +306,30 @@ std::ostream& operator << (std::ostream& os, const ExpressionElement& elem)
             os << ')';
             break;
         }
+        case ElementType::kPostDecrement:
+        {
+            os << " post --";
+            break;
+        }
+        case ElementType::kPreDecrement:
+        {
+            os << " post --";
+            break;
+        }
+        case ElementType::kPostIncrement:
+        {
+            os << " pre ++";
+            break;
+        }
+        case ElementType::kPreIncrement:
+        {
+            os << " pre ++";
+            break;
+        }
+        case ElementType::kIntRepPlaceHolder:
+        {
+            os << " IntRepPlaceHolder";
+        }
         default:
             break;
     }
@@ -330,7 +399,6 @@ IntRep::IntRep Expression::generateIntRep()
 
 Expression Expression::_generateIntRep()
 {
-
     // Search for sub expressions and evaluate them
 
     Expression  e, sube;
@@ -371,8 +439,6 @@ Expression Expression::_generateIntRep()
 
                     Expression subeRes = sube._generateIntRep();
 
-                    std::cout << subeRes << std::endl;
-
                     ExpressionElement& subeResElem = subeRes.getFinalElement();
 
                     curExp->addElement(subeResElem);
@@ -389,6 +455,10 @@ Expression Expression::_generateIntRep()
         }
     }
 
+    // Replace reference to variables with intrep
+
+    e = e.doSymbols();
+
     // Replace constants with intrep
 
     e = e.doImmediates();
@@ -404,12 +474,17 @@ Expression Expression::_generateIntRep()
 
     // Evaluate unary operators
 
+    e = e.doUnaryOp(ElementType::kPostDecrement, ExpressionHelper::PostDecVar);
+    e = e.doUnaryOp(ElementType::kPostIncrement, ExpressionHelper::PostIncVar);
+    e = e.doUnaryOp(ElementType::kPreDecrement,  ExpressionHelper::PreDecVar);
+    e = e.doUnaryOp(ElementType::kPreIncrement,  ExpressionHelper::PreIncVar);
+
     // Evaluate binary operators
 
-    e = e.doOp(ElementType::kPlus, ExpressionHelper::AddVar);
-    e = e.doOp(ElementType::kMinus, ExpressionHelper::SubVar);
-    e = e.doOp(ElementType::kShiftLeft, ExpressionHelper::ShlVar);
-    e = e.doOp(ElementType::kShiftRight, ExpressionHelper::ShrVar);
+    e = e.doOp(ElementType::kPlus,          ExpressionHelper::AddVar);
+    e = e.doOp(ElementType::kMinus,         ExpressionHelper::SubVar);
+    e = e.doOp(ElementType::kShiftLeft,     ExpressionHelper::ShlVar);
+    e = e.doOp(ElementType::kShiftRight,    ExpressionHelper::ShrVar);
 
     //< <= 	For relational operators < and ≤ respectively
     //> >= 	For relational operators > and ≥ respectively
@@ -545,6 +620,85 @@ Expression Expression::doImmediates()
             e.addElement(elem);
         }
     }
+
+    return e;
+}
+
+Expression Expression::doSymbols()
+{
+    Expression e;
+
+    for (ExpressionElement& elem : m_elements)
+    {
+        if (elem.elem == ElementType::kSymbol)
+        {
+            ExpressionElement symElem = ExpressionHelper::DoSym(elem);
+            e.addElement(symElem);
+        }
+        else
+        {
+            e.addElement(elem);
+        }
+    }
+
+    return e;
+}
+
+uint32_t Expression::parseCharLiteral(std::string literal)
+{
+
+    // Replace all '\n', '\r', '\0' etc.
+
+    int pos;
+
+    std::pair<std::string, std::string> subs[] = {{"\\n", "\n"}, {"\\r", "\r"}, {"\\0", "\0"}, {"\\t", "\t"}};
+
+    for (auto s : subs)
+        while ((pos = literal.find(s.first)) != std::string::npos)
+        {
+            literal.replace(pos, 2, s.second);
+        }
+
+    if (literal.length() > 4)
+        throw std::runtime_error("Char literal exceeds maximum size");
+
+    uint32_t val = 0;
+
+    int shift = 0;
+
+    for (char c : literal)
+    {
+        val |= (c << shift);
+        shift += 8;
+    }
+
+    return val;
+}
+
+Expression  Expression::doUnaryOp(ElementType op, std::function<ExpressionElement (ExpressionElement&)> func)
+{
+    Expression e;
+
+    ExpressionElement* left = nullptr;
+
+    for (ExpressionElement& elem : m_elements)
+    {
+        if (left != nullptr && elem.elem == op)
+        {
+            ExpressionElement immElem = func(*left);
+            e.addElement(immElem);
+            left = nullptr; // left has been consumed
+         }
+        else
+        {
+            if (left != nullptr)
+                e.addElement(*left);
+            left = &elem; // set new left from current element
+        }
+  }
+
+    if (left != nullptr)
+        e.addElement(*left);
 
     return e;
 }

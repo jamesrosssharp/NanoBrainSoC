@@ -19,7 +19,7 @@ public:
     public:
         Var(VariableStore::VariableHandle handle) : m_handle(handle) { }
 
-        const CodeGen::Variable& operator * () const
+        CodeGen::Variable& operator * () const
         {
             if (m_handle == 0)
                 throw std::runtime_error("Deref bad handle!");
@@ -27,7 +27,7 @@ public:
             return *v->getVariable(m_handle);
         }
 
-        const CodeGen::Variable* operator -> () const
+        CodeGen::Variable* operator -> () const
         {
             if (m_handle == 0)
                 throw std::runtime_error("Deref bad handle!");

@@ -40,36 +40,52 @@ short myfunc()
 
 void myfunc2(short a)
 {
-    if (1)
+    if (a & 1)
+        putch('1');
+    else if (a & 2)
+        putch('2');
+    else
+        putch('3');
+
+    putch('\r');
+    putch('\n');
+}
+
+void myfunc3(short b)
+{
+    while (b)
     {
-        putch(0x41);
+        putch('A');
+        b--;
     }
+
+    putch('\r');
+    putch('\n');
+}
+
+void myfunc4(short c)
+{
+    do
+    {
+        putch('B');
+    }
+    while (--c);
+
+    putch('\r');
+    putch('\n');
 }
 
 short main ()
 {
-/*    putch('H');
+    putch('H');
     putch('e');
     putch('l');
     putch('l');
     putch('o');
-
-    putch('0' + sum(a,b) << 2 - 1);
-
     putch('\r');
     putch('\n');
 
-    while (1)
-           ;*/
-
-    /*return sum(a,b);*/
-
-    putch(0x41);
-    putch(0x42);
-  //  putch(0x42);
-  //  putch(0x41);
-
-    //putch (0x30 + myfunc());
-
     myfunc2(myfunc());
+    myfunc3(5);
+    myfunc4(5);
 }

@@ -81,6 +81,10 @@ VariableStore::Var VariableStore::findVar(const std::string& name)
             {
                 return Var{i};
             }
+            else if (v.name == name)
+            {
+                return Var{i};
+            }
             i ++;
         }
     }

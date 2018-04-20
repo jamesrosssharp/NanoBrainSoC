@@ -57,8 +57,12 @@ namespace IntRep
         kTest,
         kJumpZ,
         kJumpNZ,
-
-        kCallFunction
+        kLoadSym,
+        kStoreSym,
+        kCallFunction,
+        kInc,
+        kDec,
+        kLoadVar,   // Copy data from one variable into another
     };
 
     struct Element
@@ -97,6 +101,8 @@ namespace IntRep
         void loadImm(const VariableStore::Var& var, int32_t intval);
         void loadImm(const VariableStore::Var& var, uint32_t intval);
 
+        void loadSym(VariableStore::Var& temp, VariableStore::Var& sym);
+
         void test(const VariableStore::Var& v1, uint32_t mask);
         void jumpNZ(const LabelStore::Label& label);
         void jumpZ(const LabelStore::Label& label);
@@ -112,6 +118,16 @@ namespace IntRep
         VariableStore::Var getOutputVar();
 
         void assimilate(const IntRep& i);
+
+        void postDecVar(const VariableStore::Var& temp, const VariableStore::Var& out);
+        void postIncVar(const VariableStore::Var& temp, const VariableStore::Var& out);
+        void preDecVar (const VariableStore::Var& temp, const VariableStore::Var& out);
+        void preIncVar (const VariableStore::Var& temp, const VariableStore::Var& out);
+
+        void loadVar(const VariableStore::Var& src, const VariableStore::Var& dest);
+        void incVar(const VariableStore::Var& v);
+        void decVar(const VariableStore::Var& v);
+        void storeSym(const VariableStore::Var& src, const VariableStore::Var& dest);
 
     private:
 

@@ -52,13 +52,19 @@ namespace Syntax
         RegisterList            = 21,
         AsmStatement            = 22,
         GroupedExpression       = 23,
+        IfElseStatement         = 24,
+        DoWhileStatement        = 25,
     };
 
     enum class UnaryExpressionType
     {
         LogicalNot,
         BitwiseNot,
-        Negation
+        Negation,
+        PostIncrement,
+        PreIncrement,
+        PostDecrement,
+        PreDecrement
     };
 
     enum class BinaryExpressionType
@@ -247,6 +253,9 @@ namespace Syntax
 
         void print(std::ostream& os, int indent) const;
 
+        Syntagma* expression() const { return m_expression; }
+        UnaryExpressionType unaryExpressionType() const { return m_expressionType; }
+
     private:
         UnaryExpressionType m_expressionType;
         Syntagma* m_expression;
@@ -406,6 +415,7 @@ namespace Syntax
         const std::string& functionName() const { return m_functionName; }
         const FunctionArguments* arguments() const { return m_arguments; }
         const Block* body() const { return m_body; }
+        const Syntagma* returnType() const { return m_returnType; }
 
     protected:
         std::string m_functionName;
@@ -474,6 +484,49 @@ namespace Syntax
     private:
         Syntagma* m_condition;
         Syntagma* m_block;
+    };
+
+
+    class IfElseStatement : public Syntagma
+    {
+    public:
+        IfElseStatement(Syntagma* condition, Block* ifBlock, Block* elseBlock)   :
+            Syntagma(ElementType::IfElseStatement),
+            m_condition(condition),
+            m_ifBlock(ifBlock),
+            m_elseBlock(elseBlock)
+        {
+
+        }
+
+        ~IfElseStatement()
+        {
+            delete m_condition;
+            delete m_ifBlock;
+            delete m_elseBlock;
+        }
+
+        Syntagma* getExpression() const
+        {
+            return m_condition;
+        }
+
+        Block* getIfBlock() const
+        {
+            return m_ifBlock;
+        }
+
+        Block* getElseBlock() const
+        {
+            return m_elseBlock;
+        }
+
+        void print(std::ostream& os, int indent) const;
+
+    private:
+        Syntagma* m_condition;
+        Block* m_ifBlock;
+        Block* m_elseBlock;
     };
 
     class Decorator : public Syntagma
@@ -564,7 +617,7 @@ namespace Syntax
     class WhileStatement : public Syntagma
     {
     public:
-        WhileStatement(Syntagma* condition, Syntagma* block) :
+        WhileStatement(Syntagma* condition, Block* block) :
             Syntagma(ElementType::WhileStatement),
             m_condition(condition),
             m_block(block)
@@ -580,10 +633,41 @@ namespace Syntax
 
         void print(std::ostream& os, int indent) const;
 
+        Syntagma* getExpression() const { return m_condition; }
+        Block* getBlock() const { return m_block; }
+
     private:
 
         Syntagma* m_condition;
-        Syntagma* m_block;
+        Block* m_block;
+    };
+
+    class DoWhileStatement : public Syntagma
+    {
+    public:
+        DoWhileStatement(Syntagma* condition, Block* block) :
+            Syntagma(ElementType::DoWhileStatement),
+            m_condition(condition),
+            m_block(block)
+        {
+
+        }
+
+        ~DoWhileStatement()
+        {
+            delete m_condition;
+            delete m_block;
+        }
+
+        void print(std::ostream& os, int indent) const;
+
+        Syntagma* getExpression() const { return m_condition; }
+        Block* getBlock() const { return m_block; }
+
+    private:
+
+        Syntagma* m_condition;
+        Block* m_block;
     };
 
     class TopLevel : public Syntagma

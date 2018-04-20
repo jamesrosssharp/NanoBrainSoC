@@ -24,6 +24,7 @@ SimulatorWindow::SimulatorWindow(QWidget *parent) :
     connect(m_timer, SIGNAL(timeout()), this, SLOT(update()));
 
     m_timer->start(10);
+
 }
 
 SimulatorWindow::~SimulatorWindow()
@@ -113,4 +114,9 @@ void SimulatorWindow::onResetPressed()
 void SimulatorWindow::onResetReleased()
 {
     m_onResetButton(false);
+}
+
+void SimulatorWindow::onDebugPressed()
+{
+    m_onDebuggerPressed();
 }

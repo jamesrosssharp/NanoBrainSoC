@@ -48,8 +48,13 @@ namespace Expr
         kSymbol,
         kTemporary,
         kIntRepPlaceHolder,
-        kLiteralIntRepPlaceHolder   // If it's a literal that's been compiled, we may need to coalesce as a
+        kLiteralIntRepPlaceHolder,   // If it's a literal that's been compiled, we may need to coalesce as a
                                     // pre-optimisation step, so mark it as a separate entity
+        kPostIncrement,
+        kPostDecrement,
+        kPreIncrement,
+        kPreDecrement
+
     };
 
     class Expression;
@@ -98,16 +103,24 @@ namespace Expr
     private:
 
         void        convertExpressionType(ExpressionElement& e, Syntax::BinaryExpressionType type);
+        void        convertUnaryExpressionType(ExpressionElement& e, Syntax::UnaryExpressionType type);
+
         bool        _reduceToConstant();
         Expression  _generateIntRep();
 
         Expression  doOp(ElementType op,
                          std::function<ExpressionElement (ExpressionElement&, ExpressionElement&)> func);
 
+        Expression  doUnaryOp(ElementType op,
+                         std::function<ExpressionElement (ExpressionElement&)> func);
+
         Expression doFunctionCalls();
         Expression doImmediates();
+        Expression doSymbols();
 
         ExpressionElement& getFinalElement();
+
+        uint32_t   parseCharLiteral(std::string literal);
 
         std::vector<ExpressionElement> m_elements;
 

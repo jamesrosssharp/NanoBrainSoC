@@ -80,8 +80,10 @@ int g_str_idx = 0;
 
 "return"          { return RETURN; }
 "while"           { return WHILE;  }
+"do"              { return DO;     }
 "if"              { return IF;     }
 "switch"          { return SWITCH; }
+"else"            { return ELSE;   }
 
 [0-9]+ {yylval.integerLiteral = atoi(yytext); return INT; }
 0x[0-9a-f]+ {yylval.integerLiteral = strtol(yytext, nullptr, 16); return INT;}
@@ -103,6 +105,9 @@ int g_str_idx = 0;
 "|"  { return '|'; }
 "="  { return '='; }
 "^"  { return '^'; }
+
+"--" { return DECREMENT; }
+"++" { return INCREMENT; }
 
 "<<" { return SHIFT_LEFT; }
 ">>" { return SHIFT_RIGHT; }

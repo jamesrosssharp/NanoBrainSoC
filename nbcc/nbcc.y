@@ -48,11 +48,13 @@ void yyerror(const char *s);
 
 %token ASM VOLATILE CONST STATIC AUTO
 
-%token RETURN WHILE IF SWITCH CASE ELSE
+%token RETURN WHILE IF SWITCH CASE ELSE DO
 
 %token LEFT_BRACE RIGHT_BRACE
 
 %token SHIFT_LEFT SHIFT_RIGHT
+
+%token DECREMENT INCREMENT
 
 %token <integerLiteral> INT
 %token <hexLiteral>     HEXVAL
@@ -70,6 +72,9 @@ void yyerror(const char *s);
 %left '&'
 %left '|'
 %left '^'
+
+%right DECREMENT
+%right INCREMENT
 
 %%
 
@@ -101,7 +106,15 @@ block_contents: block_contents statement { handleBlock1(); } |
 
 /* statements */
 
-statement: return_statement | while_statement | if_statement | assigment | declaration | asm_block | expression ';' ;
+statement: return_statement     |
+           while_statement      |
+           ifelse_statement     |
+           if_statement         |
+           assigment            |
+           declaration          |
+           asm_block            |
+           do_while_statement   |
+           expression ';' ;
 
 /* asm block */
 
@@ -128,10 +141,24 @@ return_statement: RETURN expression ';' { handleReturnStatement(); }
 while_statement: WHILE '(' expression ')' block { handleWhile1(); } |
                  WHILE '(' expression ')' ';'       { handleWhile2(); }
 
+/* do ... while */
+
+do_while_statement: DO block WHILE '(' expression ')' ';' { handleDoWhile(); }
+
 /* if */
 
 if_statement: IF '(' expression ')' block { handleIf1(); } |
               IF '(' expression ')' statement ';' { handleIf2(); }
+
+/* if ... else */
+
+ifelse_statement: ifelse_statement ifelse_statement_basic |
+                  ifelse_statement_basic ;
+
+ifelse_statement_basic: IF '(' expression ')' block ELSE block { handleIfElse1(); } |
+                  IF '(' expression ')' block ELSE statement  {handleIfElse2(); } |
+                  IF '(' expression ')' statement ELSE block {handleIfElse3(); } |
+                  IF '(' expression ')' statement ELSE statement  {handleIfElse4(); }
 
 /* assignment */
 
@@ -157,7 +184,12 @@ expression:
         expression SHIFT_LEFT expression    { handleExpressionShiftLeft(); } |
         expression SHIFT_RIGHT expression   { handleExpressionShiftRight(); } |
         '(' expression ')'                  { handleGroupedExpression(); } |
-        SYMBOL parameter_list               { handleExpressionFunctionCall($1); }
+        SYMBOL parameter_list               { handleExpressionFunctionCall($1); } |
+        SYMBOL INCREMENT                    { handleExpressionPostIncrement($1); } |
+        INCREMENT SYMBOL                     { handleExpressionPreIncrement($2); } |
+        SYMBOL DECREMENT                     { handleExpressionPostDecrement($1); } |
+        DECREMENT SYMBOL                     { handleExpressionPreDecrement($2); }
+
         ;
 
 /* string literal - strings can be concatenated */

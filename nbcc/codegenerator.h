@@ -95,6 +95,15 @@ namespace CodeGen
 
         void generateIfStatement(const Syntax::IfStatement* i, std::stringstream& ss,
                                      bool& callsFunctions);
+        void generateIfElseStatement(const Syntax::IfElseStatement* i, std::stringstream& ss,
+                                     bool& callsFunctions);
+        void generateWhileStatement(const Syntax::WhileStatement* w, std::stringstream& ss,
+                                     bool& callsFunctions);
+        void generateDoWhileStatement(const Syntax::DoWhileStatement* w, std::stringstream& ss,
+                                     bool& callsFunctions);
+
+        void buildAndCheckStandaloneExpression(const Syntax::Syntagma* statement, std::stringstream& ss,
+                                               bool& callFunctions);
 
         void generateAsmStatement(const Syntax::AsmStatement* a, std::stringstream& ss);
         void generateFunctionCall(const Syntax::FunctionCall* f, std::stringstream& ss);
