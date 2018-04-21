@@ -53,7 +53,16 @@ namespace Expr
         kPostIncrement,
         kPostDecrement,
         kPreIncrement,
-        kPreDecrement
+        kPreDecrement,
+
+        kLessThan,
+        kLessThanOrEqual,
+        kGreaterThan,
+        kGreaterThanOrEqual,
+        kEqual,
+        kNotEqual,
+
+        kAssignment,
 
     };
 
@@ -109,6 +118,9 @@ namespace Expr
         Expression  _generateIntRep();
 
         Expression  doOp(ElementType op,
+                         std::function<ExpressionElement (ExpressionElement&, ExpressionElement&)> func);
+
+        Expression  doRightToLeftOp(ElementType op,
                          std::function<ExpressionElement (ExpressionElement&, ExpressionElement&)> func);
 
         Expression  doUnaryOp(ElementType op,

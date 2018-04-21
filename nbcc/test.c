@@ -75,9 +75,21 @@ void myfunc4(short c)
     putch('\n');
 }
 
+void myfunc5(short d)
+{
+    for (d = 0;
+         d < 10;
+         d++)
+    {
+        putch('C');
+    }
+    putch('\r');
+    putch('\n');
+}
+
 short main ()
 {
-    putch('H');
+ /*   putch('H');
     putch('e');
     putch('l');
     putch('l');
@@ -87,5 +99,6 @@ short main ()
 
     myfunc2(myfunc());
     myfunc3(5);
-    myfunc4(5);
+    myfunc4(5);*/
+    myfunc5(0);
 }

@@ -48,13 +48,15 @@ void yyerror(const char *s);
 
 %token ASM VOLATILE CONST STATIC AUTO
 
-%token RETURN WHILE IF SWITCH CASE ELSE DO
+%token RETURN WHILE IF SWITCH CASE ELSE DO FOR
 
 %token LEFT_BRACE RIGHT_BRACE
 
 %token SHIFT_LEFT SHIFT_RIGHT
 
 %token DECREMENT INCREMENT
+
+%token LESS_THAN LESS_THAN_EQUAL GREATER_THAN GREATER_THAN_EQUAL EQUAL NOT_EQUAL
 
 %token <integerLiteral> INT
 %token <hexLiteral>     HEXVAL
@@ -110,10 +112,10 @@ statement: return_statement     |
            while_statement      |
            ifelse_statement     |
            if_statement         |
-           assigment            |
            declaration          |
            asm_block            |
            do_while_statement   |
+           for_loop   |
            expression ';' ;
 
 /* asm block */
@@ -160,9 +162,14 @@ ifelse_statement_basic: IF '(' expression ')' block ELSE block { handleIfElse1()
                   IF '(' expression ')' statement ELSE block {handleIfElse3(); } |
                   IF '(' expression ')' statement ELSE statement  {handleIfElse4(); }
 
+/* for loop   */
+
+for_loop:    FOR '(' expression ';' expression ';' expression ')' block { handleForLoop1(); }    |
+             FOR '(' expression ';' expression ';' expression ')' statement ';' {handleForLoop2(); }
+
 /* assignment */
 
-assigment:      SYMBOL '=' expression ';'           { handleAssignment($1); }
+assignment:      SYMBOL '=' expression           { handleAssignment($1); }
 
 /* variable declaration */
 
@@ -171,6 +178,7 @@ declaration:    type SYMBOL '=' expression ';'      { handleDeclaration($2); }
 /* expression */
 
 expression:
+        assignment   |
         SYMBOL          { handleExpressionSymbol($1); }             |
         INT             { handleExpressionIntImmediate($1); }       |
         CH_LITERAL      { handleExpressionCharLiteral($1); }        |
@@ -188,8 +196,13 @@ expression:
         SYMBOL INCREMENT                    { handleExpressionPostIncrement($1); } |
         INCREMENT SYMBOL                     { handleExpressionPreIncrement($2); } |
         SYMBOL DECREMENT                     { handleExpressionPostDecrement($1); } |
-        DECREMENT SYMBOL                     { handleExpressionPreDecrement($2); }
-
+        DECREMENT SYMBOL                     { handleExpressionPreDecrement($2); }  |
+        expression LESS_THAN expression          { handleLessThan(); }                       |
+        expression LESS_THAN_EQUAL expression    { handleLessThanEqual(); }                  |
+        expression GREATER_THAN expression       { handleGreaterThan(); }                    |
+        expression GREATER_THAN_EQUAL expression { handleGreaterThanEqual(); }               |
+        expression EQUAL expression              { handleEqual(); }                          |
+        expression NOT_EQUAL expression          { handleNotEqual(); }
         ;
 
 /* string literal - strings can be concatenated */

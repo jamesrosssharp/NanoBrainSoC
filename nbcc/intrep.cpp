@@ -237,6 +237,37 @@ void IntRep::IntRep::jumpNZ(const LabelStore::Label &label)
     m_elements.push_back(e);
 }
 
+void IntRep::IntRep::jumpC(const LabelStore::Label &label)
+{
+    Element e;
+
+    e.element = ElementType::kJumpC;
+    e.label = label;
+
+    m_elements.push_back(e);
+}
+
+void IntRep::IntRep::jumpNC(const LabelStore::Label &label)
+{
+    Element e;
+
+    e.element = ElementType::kJumpNC;
+    e.label = label;
+
+    m_elements.push_back(e);
+}
+
+void IntRep::IntRep::jump(const LabelStore::Label &label)
+{
+    Element e;
+
+    e.element = ElementType::kJump;
+    e.label = label;
+
+    m_elements.push_back(e);
+}
+
+
 VariableStore::Var IntRep::IntRep::declareTemporary()
 {
 
@@ -491,6 +522,166 @@ void IntRep::IntRep::storeSym(const VariableStore::Var& src, const VariableStore
     e.v2 = dest;
 
     m_elements.push_back(e);
+}
+
+void IntRep::IntRep::lessThanVar(const VariableStore::Var& left, const VariableStore::Var& right,
+                                 const VariableStore::Var& out)
+{
+
+    LabelStore::Label l1 = LabelStore::getInstance()->declareTempLab();
+    LabelStore::Label l2 = LabelStore::getInstance()->declareTempLab();
+
+    compare(right, left);
+    jumpC(l1);
+    jumpZ(l1);
+
+    loadImm(out, 1);
+    jump(l2);
+
+    labelDec(l1);
+    loadImm(out, 0);
+
+    labelDec(l2);
+
+    output(out);
 
 }
 
+void IntRep::IntRep::lessThanEqualVar(const VariableStore::Var& left, const VariableStore::Var& right,
+                                      const VariableStore::Var& out)
+{
+
+    LabelStore::Label l1 = LabelStore::getInstance()->declareTempLab();
+    LabelStore::Label l2 = LabelStore::getInstance()->declareTempLab();
+
+    compare(right, left);
+    jumpC(l1);
+
+    loadImm(out, 1);
+    jump(l2);
+
+    labelDec(l1);
+    loadImm(out, 0);
+
+    labelDec(l2);
+
+    output(out);
+}
+
+void IntRep::IntRep::greaterThanVar(const VariableStore::Var& left, const VariableStore::Var& right,
+                                    const VariableStore::Var& out)
+{
+    LabelStore::Label l1 = LabelStore::getInstance()->declareTempLab();
+    LabelStore::Label l2 = LabelStore::getInstance()->declareTempLab();
+
+    compare(right, left);
+    jumpC(l1);
+
+    loadImm(out, 0);
+    jump(l2);
+
+    labelDec(l1);
+    loadImm(out, 1);
+
+    labelDec(l2);
+
+    output(out);
+}
+
+void IntRep::IntRep::greaterThanEqualVar(const VariableStore::Var& left, const VariableStore::Var& right,
+                                         const VariableStore::Var& out)
+{
+
+    LabelStore::Label l1 = LabelStore::getInstance()->declareTempLab();
+    LabelStore::Label l2 = LabelStore::getInstance()->declareTempLab();
+
+    compare(right, left);
+    jumpC(l1);
+    jumpZ(l1);
+
+    loadImm(out, 0);
+    jump(l2);
+
+    labelDec(l1);
+    loadImm(out, 1);
+
+    labelDec(l2);
+
+    output(out);
+}
+
+void IntRep::IntRep::equalVar(const VariableStore::Var& left, const VariableStore::Var& right,
+                              const VariableStore::Var& out)
+{
+    LabelStore::Label l1 = LabelStore::getInstance()->declareTempLab();
+    LabelStore::Label l2 = LabelStore::getInstance()->declareTempLab();
+
+    compare(right, left);
+    jumpZ(l1);
+
+    loadImm(out, 0);
+    jump(l2);
+
+    labelDec(l1);
+    loadImm(out, 1);
+
+    labelDec(l2);
+
+    output(out);
+
+}
+
+void IntRep::IntRep::notEqualVar(const VariableStore::Var& left, const VariableStore::Var& right,
+                                 const VariableStore::Var& out)
+{
+    LabelStore::Label l1 = LabelStore::getInstance()->declareTempLab();
+    LabelStore::Label l2 = LabelStore::getInstance()->declareTempLab();
+
+    compare(right, left);
+    jumpZ(l1);
+
+    loadImm(out, 1);
+    jump(l2);
+
+    labelDec(l1);
+    loadImm(out, 0);
+
+    labelDec(l2);
+
+    output(out);
+}
+
+void IntRep::IntRep::labelDec(const LabelStore::Label& l)
+{
+    Element e;
+
+    e.element = ElementType::kLabelDec;
+    e.label = l;
+
+    m_elements.push_back(e);
+}
+
+void IntRep::IntRep::compare(const VariableStore::Var& v1, const VariableStore::Var& v2)
+{
+    Element e;
+
+    e.element = ElementType::kCompare;
+    e.v1 = v1;
+    e.v2 = v2;
+
+    m_elements.push_back(e);
+}
+
+
+void IntRep::IntRep::assignSymbol(VariableStore::Var& v1, VariableStore::Var& v2, VariableStore::Var& out)
+{
+    VariableStore::Var vsym = VariableStore::getInstance()->findVar(v2->shadowsVar);
+
+    loadVar(v2, v1);
+
+    storeSym(v1, vsym);
+
+    loadVar(v1, out);
+
+    output(out);
+}

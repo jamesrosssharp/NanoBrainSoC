@@ -84,6 +84,7 @@ int g_str_idx = 0;
 "if"              { return IF;     }
 "switch"          { return SWITCH; }
 "else"            { return ELSE;   }
+"for"             { return FOR;    }
 
 [0-9]+ {yylval.integerLiteral = atoi(yytext); return INT; }
 0x[0-9a-f]+ {yylval.integerLiteral = strtol(yytext, nullptr, 16); return INT;}
@@ -111,6 +112,13 @@ int g_str_idx = 0;
 
 "<<" { return SHIFT_LEFT; }
 ">>" { return SHIFT_RIGHT; }
+
+"<"  { return LESS_THAN; }
+"<=" { return LESS_THAN_EQUAL; }
+">"  { return GREATER_THAN; }
+">=" { return GREATER_THAN_EQUAL; }
+"==" { return EQUAL; }
+"!=" { return NOT_EQUAL; }
 
 \n             { ++line_num; }
 

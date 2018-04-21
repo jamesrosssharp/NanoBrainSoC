@@ -66,3 +66,12 @@ void handleExpressionPreIncrement(char *symbol);
 void handleExpressionPreDecrement(char *symbol);
 
 void handleDoWhile();
+void handleForLoop1();
+void handleForLoop2();
+
+void handleLessThan();
+void handleLessThanEqual();
+void handleGreaterThan();
+void handleGreaterThanEqual();
+void handleEqual();
+void handleNotEqual();

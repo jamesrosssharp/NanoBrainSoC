@@ -166,6 +166,32 @@ void Expression::fromSyntaxTree(const Syntax::Syntagma* expression)
 
             break;
         }
+        case Syntax::ElementType::Assignment:
+        {
+            const Syntax::Assignment* a = dynamic_cast<const Syntax::Assignment*>(expression);
+
+            if (a == nullptr)
+                throw std::runtime_error("Cannot cast to assignment");
+
+            ExpressionElement esym;
+
+            esym.line_num = expression->linenum();
+            esym.elem = ElementType::kSymbol;
+            esym.symbol = a->symbol();
+
+            m_elements.push_back(esym);
+
+            ExpressionElement e;
+
+            e.line_num = expression->linenum();
+            e.elem = ElementType::kAssignment;
+
+            m_elements.push_back(e);
+
+            fromSyntaxTree(a->expression());
+
+            break;
+        }
         default:
         {
             std::stringstream s;
@@ -197,6 +223,25 @@ void Expression::convertExpressionType(ExpressionElement& e, Syntax::BinaryExpre
         case Syntax::BinaryExpressionType::BitwiseXor:
             e.elem = ElementType::kXor;
             break;
+        case Syntax::BinaryExpressionType::Equal:
+            e.elem = ElementType::kEqual;
+            break;
+        case Syntax::BinaryExpressionType::NotEqual:
+            e.elem = ElementType::kNotEqual;
+            break;
+        case Syntax::BinaryExpressionType::LessThan:
+            e.elem = ElementType::kLessThan;
+            break;
+        case Syntax::BinaryExpressionType::LessThanOrEqual:
+            e.elem = ElementType::kLessThanOrEqual;
+            break;
+        case Syntax::BinaryExpressionType::GreaterThan:
+            e.elem = ElementType::kGreaterThan;
+            break;
+        case Syntax::BinaryExpressionType::GreaterThanOrEqual:
+            e.elem = ElementType::kGreaterThanOrEqual;
+            break;
+
     }
 }
 
@@ -329,6 +374,46 @@ std::ostream& operator << (std::ostream& os, const ExpressionElement& elem)
         case ElementType::kIntRepPlaceHolder:
         {
             os << " IntRepPlaceHolder";
+            break;
+        }
+        case ElementType::kLiteralIntRepPlaceHolder:
+        {
+            os << " LiteralIntRepPlaceHolder";
+            break;
+        }
+        case ElementType::kLessThan:
+        {
+            os << " < ";
+            break;
+        }
+        case ElementType::kLessThanOrEqual:
+        {
+            os << " <= ";
+            break;
+        }
+        case ElementType::kGreaterThan:
+        {
+            os << " > ";
+            break;
+        }
+        case ElementType::kGreaterThanOrEqual:
+        {
+            os << " >= ";
+            break;
+        }
+        case ElementType::kEqual:
+        {
+            os << " == ";
+            break;
+        }
+        case ElementType::kNotEqual:
+        {
+            os << " != ";
+            break;
+        }
+        case ElementType::kAssignment:
+        {
+            os << " = ";
         }
         default:
             break;
@@ -400,6 +485,8 @@ IntRep::IntRep Expression::generateIntRep()
 Expression Expression::_generateIntRep()
 {
     // Search for sub expressions and evaluate them
+
+    std::cout << *this << std::endl;
 
     Expression  e, sube;
     uint32_t     stackDepth = 0;
@@ -487,8 +574,16 @@ Expression Expression::_generateIntRep()
     e = e.doOp(ElementType::kShiftRight,    ExpressionHelper::ShrVar);
 
     //< <= 	For relational operators < and ≤ respectively
+    e = e.doOp(ElementType::kLessThan,          ExpressionHelper::LessThanVar);
+    e = e.doOp(ElementType::kLessThanOrEqual,     ExpressionHelper::LessThanEqualVar);
+
     //> >= 	For relational operators > and ≥ respectively
+    e = e.doOp(ElementType::kGreaterThan,       ExpressionHelper::GreaterThanVar);
+    e = e.doOp(ElementType::kGreaterThanOrEqual,  ExpressionHelper::GreaterThanEqualVar);
+
     //== != 	For relational = and ≠ respectively
+    e = e.doOp(ElementType::kEqual,         ExpressionHelper::EqualVar);
+    e = e.doOp(ElementType::kNotEqual,      ExpressionHelper::NotEqualVar);
 
     //  & 	Bitwise AND
     e = e.doOp(ElementType::kAnd, ExpressionHelper::AndVar);
@@ -497,9 +592,11 @@ Expression Expression::_generateIntRep()
     // 	|
     e = e.doOp(ElementType::kOr, ExpressionHelper::OrVar);
 
+    // Simple assignment
+
+    e = e.doRightToLeftOp(ElementType::kAssignment, ExpressionHelper::SimpleAssignment);
 
     // Return reduced expression
-
 
     return e;
 
@@ -576,6 +673,84 @@ Expression  Expression::doOp(ElementType type,
         e.addElement(*left);
 
 done:
+    if (foundOp)
+        return e.doOp(type, func);
+    else
+        return e;
+}
+
+Expression  Expression::doRightToLeftOp(ElementType type,
+                 std::function<ExpressionElement (ExpressionElement&, ExpressionElement&)> func)
+{
+
+    Expression e;
+    bool foundOp = false;
+
+    ElementType op = ElementType::kNone;
+
+    ExpressionElement* right = nullptr;
+
+    int idx = m_elements.size() - 2;
+
+    std::vector<ExpressionElement> vec;
+
+    std::cout << *this << std::endl;
+
+    for (auto iter = m_elements.rbegin(); iter != m_elements.rend(); iter++)
+    {
+        ExpressionElement& mid = *iter;
+
+        if (mid.elem == type)
+        {
+            foundOp = true;
+
+            ExpressionElement* left;
+
+            try {
+                left = &m_elements.at(idx);
+            }
+            catch (std::out_of_range)
+            {
+                std::stringstream ss;
+                ss << "Binary operator without LHS on line " << mid.line_num;
+                throw std::runtime_error(ss.str());
+            }
+
+            if (right == nullptr)
+            {
+                std::stringstream ss;
+                ss << "Binary operator without RHS on line " << mid.line_num;
+                throw std::runtime_error(ss.str());
+            }
+
+            ExpressionElement out = func(*right, *left);
+
+            vec.push_back(out);
+
+            for (int i = idx - 1; i >= 0; i --)
+                vec.push_back(m_elements[i]);
+
+            goto done;
+
+        }
+        else
+        {
+            if (right != nullptr)
+                vec.push_back(*right);
+        }
+
+        right = &mid;
+        idx--;
+    }
+
+    if (right != nullptr)
+        vec.push_back(*right);
+
+done:
+
+    for (auto iter = vec.rbegin(); iter != vec.rend(); iter++)
+        e.addElement(*iter);
+
     if (foundOp)
         return e.doOp(type, func);
     else

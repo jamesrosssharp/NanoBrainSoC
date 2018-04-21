@@ -420,3 +420,31 @@ void IfElseStatement::print(std::ostream &os, int indent) const
 
     m_elseBlock->print(os, indent + 1);
 }
+
+void ForLoop::print(std::ostream &os, int indent) const
+{
+    PrintIndent(os, indent);
+
+    os << "FOR (" << std::endl;
+
+    m_initialiser->print(os, indent + 1);
+
+    PrintIndent(os, indent);
+
+    os << ";" << std::endl;
+
+    m_condition->print(os, indent + 1);
+
+    PrintIndent(os, indent);
+
+    os << ";" << std::endl;
+
+    m_incrementor->print(os, indent + 1);
+
+    PrintIndent(os, indent);
+
+    os << ")" << std::endl;
+
+    m_block->print(os, indent + 1);
+
+}

@@ -101,6 +101,8 @@ namespace CodeGen
                                      bool& callsFunctions);
         void generateDoWhileStatement(const Syntax::DoWhileStatement* w, std::stringstream& ss,
                                      bool& callsFunctions);
+        void generateForLoopStatement(const Syntax::ForLoop* l, std::stringstream& ss,
+                                     bool& callsFunctions);
 
         void buildAndCheckStandaloneExpression(const Syntax::Syntagma* statement, std::stringstream& ss,
                                                bool& callFunctions);

@@ -690,6 +690,17 @@ void CodeGenerator::generateBlock(const Syntax::Block *b, std::stringstream &ss,
 
                 break;
             }
+            case Syntax::ElementType::ForLoop:
+            {
+                Syntax::ForLoop* l = dynamic_cast<Syntax::ForLoop*>(statement);
+
+                if (l == nullptr)
+                    throw std::runtime_error("Could not cast to a ForLoop statement!");
+
+                generateForLoopStatement(l, ss, callsFunctions);
+
+                break;
+            }
             case Syntax::ElementType::UnaryExpression:
             case Syntax::ElementType::BinaryExpression:
             {
@@ -1162,8 +1173,6 @@ void CodeGenerator::generateDoWhileStatement(const Syntax::DoWhileStatement* w, 
 
     ir = e.generateIntRep();
 
-    std::cout << ir << std::endl;
-
     // Get "out" of int rep
 
     VariableStore::Var v = ir.getOutputVar();
@@ -1218,4 +1227,72 @@ void CodeGenerator::buildAndCheckStandaloneExpression(const Syntax::Syntagma* st
 
 
 }
+
+void CodeGenerator::generateForLoopStatement(const Syntax::ForLoop* l, std::stringstream& ss,
+                             bool& callsFunctions)
+{
+
+    // Generate initialiser
+
+    buildAndCheckStandaloneExpression(l->getInitialiser(), ss, callsFunctions);
+
+    // Generate label l1
+
+    LabelStore::Label l1 = LabelStore::getInstance()->declareTempLab();
+    LabelStore::Label l2 = LabelStore::getInstance()->declareTempLab();
+
+    ss << l1->asmName << ":" << std::endl;
+
+    // Generate condition
+
+    Expr::Expression e;
+
+    e.fromSyntaxTree(l->getCondition());
+
+    IntRep::IntRep ir;
+
+    ir = e.generateIntRep();
+
+    VariableStore::Var v = ir.getOutputVar();
+
+    if (v == VariableStore::Var(0))
+        throw std::runtime_error("Could not get 'out' of int rep");
+
+    IntRep::IntRep ir2;
+
+    ir2.assimilate(ir);
+
+    ir2.test(v, 0xffff);
+
+    ir2.jumpZ(l2);
+
+    ss << IntRepCompiler::GenerateAssembly(ir2, m_registers16, false);
+
+    // Generate block
+
+    bool dummy;
+
+    generateBlock(l->getBlock(), ss, callsFunctions, dummy);
+
+    // Generate incrementor
+
+    Expr::Expression e2;
+
+    e2.fromSyntaxTree(l->getIncrementor());
+
+    IntRep::IntRep ir3;
+
+    ir3 = e2.generateIntRep();
+
+    ss << IntRepCompiler::GenerateAssembly(ir3, m_registers16, false);
+
+    // Jump to l1
+
+    ss << SPACES "jump " << l1->asmName << std::endl;
+
+    // Generate label l2
+
+    ss << l2->asmName << ":" << std::endl;
+}
+
 

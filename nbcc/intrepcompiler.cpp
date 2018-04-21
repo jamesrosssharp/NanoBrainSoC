@@ -274,7 +274,7 @@ std::string IntRepCompiler::GenerateAssembly(const IntRep::IntRep& i,
 
                 // Load op1 into r1
 
-                ss << SPACES << "test r" << reg1 << ", 0x" << std::hex << e.immval.v.uval << std::endl;
+                ss << SPACES << "test r" << std::dec << reg1 << ", 0x" << std::hex << e.immval.v.uval << std::endl;
 
                 break;
             }
@@ -408,7 +408,7 @@ std::string IntRepCompiler::GenerateAssembly(const IntRep::IntRep& i,
                 if (reg1 == -1)
                     throw std::runtime_error("Could not find a variable");
 
-                ss << SPACES "add r" << reg1 << ", 1" << std::endl;
+                ss << SPACES "add r" << std::dec << reg1 << ", 1" << std::endl;
 
                 break;
             }
@@ -419,7 +419,7 @@ std::string IntRepCompiler::GenerateAssembly(const IntRep::IntRep& i,
                 if (reg1 == -1)
                     throw std::runtime_error("Could not find a variable");
 
-                ss << SPACES "sub r" << reg1 << ", 1" << std::endl;
+                ss << SPACES "sub r" << std::dec << reg1 << ", 1" << std::endl;
 
                 break;
             }
@@ -431,7 +431,7 @@ std::string IntRepCompiler::GenerateAssembly(const IntRep::IntRep& i,
                 if (reg1 == -1 || reg2 == -1)
                     throw std::runtime_error("Could not find registers!");
 
-                ss << SPACES "load r" << reg1 << ", r" << reg2 << std::endl;
+                ss << SPACES "load r" << std::dec << reg1 << ", r" << reg2 << std::endl;
 
                 break;
             }
@@ -452,7 +452,57 @@ std::string IntRepCompiler::GenerateAssembly(const IntRep::IntRep& i,
                     throw std::runtime_error("Could not find register!");
                 }
 
-                ss << SPACES "load r" << reg2 << ", r" << reg1 << std::endl;
+                ss << SPACES "load r" << std::dec << reg2 << ", r" << reg1 << std::endl;
+
+                break;
+            }
+            case IntRep::ElementType::kJumpC:
+            {
+                LabelStore::Label l = e.label;
+
+                ss << SPACES << "jumpc " << l->asmName << std::endl;
+
+                break;
+            }
+            case IntRep::ElementType::kJumpNC:
+            {
+                LabelStore::Label l = e.label;
+
+                ss << SPACES << "jumpnc " << l->asmName << std::endl;
+
+
+                break;
+            }
+            case IntRep::ElementType::kJump:
+            {
+                LabelStore::Label l = e.label;
+
+                ss << SPACES << "jump " << l->asmName << std::endl;
+
+                break;
+            }
+            case IntRep::ElementType::kLabelDec:
+            {
+                LabelStore::Label l = e.label;
+
+                ss << l->asmName << ":" << std::endl;
+
+                break;
+            }
+            case IntRep::ElementType::kCompare:
+            {
+                // Find reg for op1
+
+                int reg1 = FindRegForVar(registers16, e.v1);
+
+                // Find reg for op2
+
+                int reg2 = FindRegForVar(registers16, e.v2);
+
+                if (reg1 == -1 || reg2 == -1)
+                    throw std::runtime_error("Could not find register");
+
+                ss << SPACES << "cmp r" << std::dec << reg1 << ", r" << reg2 << std::endl;
 
                 break;
             }

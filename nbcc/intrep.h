@@ -57,12 +57,17 @@ namespace IntRep
         kTest,
         kJumpZ,
         kJumpNZ,
+        kJumpC,
+        kJumpNC,
+        kJump,
         kLoadSym,
         kStoreSym,
         kCallFunction,
         kInc,
         kDec,
         kLoadVar,   // Copy data from one variable into another
+        kLabelDec,  // Place holder for a label
+        kCompare,
     };
 
     struct Element
@@ -106,6 +111,11 @@ namespace IntRep
         void test(const VariableStore::Var& v1, uint32_t mask);
         void jumpNZ(const LabelStore::Label& label);
         void jumpZ(const LabelStore::Label& label);
+        void jumpNC(const LabelStore::Label& label);
+        void jumpC(const LabelStore::Label& label);
+        void jump(const LabelStore::Label& label);
+
+        void assignSymbol(VariableStore::Var& v1, VariableStore::Var& v2, VariableStore::Var& out); // assign v2 to v1's shadow variable and also output it
 
         void deleteTemporary(const VariableStore::Var& temp);
 
@@ -128,6 +138,17 @@ namespace IntRep
         void incVar(const VariableStore::Var& v);
         void decVar(const VariableStore::Var& v);
         void storeSym(const VariableStore::Var& src, const VariableStore::Var& dest);
+
+        void labelDec(const LabelStore::Label& l);
+        void compare(const VariableStore::Var& v1, const VariableStore::Var& v2); // Inserts a compare operation, caller
+                                                                                  // must take action on resulting flags
+
+        void lessThanVar(const VariableStore::Var& left, const VariableStore::Var& right, const VariableStore::Var& out);
+        void lessThanEqualVar(const VariableStore::Var& left, const VariableStore::Var& right, const VariableStore::Var& out);
+        void greaterThanVar(const VariableStore::Var& left, const VariableStore::Var& right, const VariableStore::Var& out);
+        void greaterThanEqualVar(const VariableStore::Var& left, const VariableStore::Var& right, const VariableStore::Var& out);
+        void equalVar(const VariableStore::Var& left, const VariableStore::Var& right, const VariableStore::Var& out);
+        void notEqualVar(const VariableStore::Var& left, const VariableStore::Var& right, const VariableStore::Var& out);
 
     private:
 

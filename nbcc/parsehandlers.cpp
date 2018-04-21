@@ -720,3 +720,62 @@ void handleDoWhile()
     g_syntaxStack.push(w);
 
 }
+
+void handleForLoop1()
+{
+    Syntax::Block* block = dynamic_cast<Syntax::Block*>(g_syntaxStack.pop());
+
+    Syntax::Syntagma* increment = g_syntaxStack.pop();
+    Syntax::Syntagma* cond = g_syntaxStack.pop();
+    Syntax::Syntagma* init = g_syntaxStack.pop();
+
+    Syntax::Syntagma* forLoop = new Syntax::ForLoop(init, cond, increment, block);
+
+    g_syntaxStack.push(forLoop);
+}
+
+void handleForLoop2()
+{
+    Syntax::Syntagma* statement = g_syntaxStack.pop();
+
+    Syntax::Block* block = new Syntax::Block;
+    block->append(statement);
+
+    Syntax::Syntagma* increment = g_syntaxStack.pop();
+    Syntax::Syntagma* cond = g_syntaxStack.pop();
+    Syntax::Syntagma* init = g_syntaxStack.pop();
+
+    Syntax::Syntagma* forLoop = new Syntax::ForLoop(init, cond, increment, block);
+
+    g_syntaxStack.push(forLoop);
+}
+
+void handleLessThan()
+{
+    handleExpressionArith(Syntax::BinaryExpressionType::LessThan);
+}
+
+void handleLessThanEqual()
+{
+    handleExpressionArith(Syntax::BinaryExpressionType::LessThanOrEqual);
+}
+
+void handleGreaterThan()
+{
+    handleExpressionArith(Syntax::BinaryExpressionType::GreaterThan);
+}
+
+void handleGreaterThanEqual()
+{
+    handleExpressionArith(Syntax::BinaryExpressionType::GreaterThanOrEqual);
+}
+
+void handleEqual()
+{
+    handleExpressionArith(Syntax::BinaryExpressionType::Equal);
+}
+
+void handleNotEqual()
+{
+    handleExpressionArith(Syntax::BinaryExpressionType::NotEqual);
+}

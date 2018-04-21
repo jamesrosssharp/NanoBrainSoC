@@ -44,6 +44,15 @@ namespace ExpressionHelper
     Expr::ExpressionElement PreDecVar(Expr::ExpressionElement& expr);
     Expr::ExpressionElement PreIncVar(Expr::ExpressionElement& expr);
 
+    Expr::ExpressionElement LessThanVar(Expr::ExpressionElement& left, Expr::ExpressionElement& right);
+    Expr::ExpressionElement LessThanEqualVar(Expr::ExpressionElement& left, Expr::ExpressionElement& right);
+    Expr::ExpressionElement GreaterThanVar(Expr::ExpressionElement& left, Expr::ExpressionElement& right);
+    Expr::ExpressionElement GreaterThanEqualVar(Expr::ExpressionElement& left, Expr::ExpressionElement& right);
+    Expr::ExpressionElement EqualVar(Expr::ExpressionElement& left, Expr::ExpressionElement& right);
+    Expr::ExpressionElement NotEqualVar(Expr::ExpressionElement& left, Expr::ExpressionElement& right);
+
+    Expr::ExpressionElement SimpleAssignment(Expr::ExpressionElement& left, Expr::ExpressionElement& right);
+
     Expr::ExpressionElement GenericBinaryOp(Expr::ExpressionElement& left, Expr::ExpressionElement& right,
                                             std::function<void (IntRep::IntRep& intrep, VariableStore::Var& left,
                                                                 VariableStore::Var& right,

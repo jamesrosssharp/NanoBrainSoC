@@ -54,6 +54,7 @@ namespace Syntax
         GroupedExpression       = 23,
         IfElseStatement         = 24,
         DoWhileStatement        = 25,
+        ForLoop                 = 26,
     };
 
     enum class UnaryExpressionType
@@ -79,6 +80,7 @@ namespace Syntax
         Multiply,
         Divide,
         Equal,
+        NotEqual,
         LessThan,
         LessThanOrEqual,
         GreaterThan,
@@ -305,6 +307,9 @@ namespace Syntax
         }
 
         void print(std::ostream& os, int indent) const;
+
+        std::string symbol() const { return m_var; }
+        Syntagma* expression() const { return m_expression; }
 
     private:
         std::string m_var;
@@ -669,6 +674,42 @@ namespace Syntax
         Syntagma* m_condition;
         Block* m_block;
     };
+
+    class ForLoop : public Syntagma
+    {
+    public:
+        ForLoop(Syntagma* initialiser, Syntagma* condition, Syntagma* incrementor, Block* block) :
+            Syntagma(ElementType::ForLoop),
+            m_initialiser(initialiser),
+            m_condition(condition),
+            m_incrementor(incrementor),
+            m_block(block)
+        {
+
+        }
+
+        ~ForLoop()
+        {
+            delete m_initialiser;
+            delete m_condition;
+            delete m_incrementor;
+            delete m_block;
+        }
+
+        void print(std::ostream& os, int indent) const;
+
+        Syntagma* getInitialiser() const { return m_initialiser; }
+        Syntagma* getCondition() const { return m_condition; }
+        Syntagma* getIncrementor() const { return m_incrementor; }
+        Block* getBlock() const { return m_block; }
+
+    private:
+        Syntagma* m_initialiser;
+        Syntagma* m_condition;
+        Syntagma* m_incrementor;
+        Block* m_block;
+    };
+
 
     class TopLevel : public Syntagma
     {

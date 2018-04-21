@@ -77,6 +77,75 @@ Expr::ExpressionElement ExpressionHelper::XorVar(Expr::ExpressionElement& left, 
 
 }
 
+
+Expr::ExpressionElement ExpressionHelper::LessThanVar(Expr::ExpressionElement& left, Expr::ExpressionElement& right)
+{
+    return GenericBinaryOp(left, right,
+                        [] (IntRep::IntRep& intRep, VariableStore::Var& left, VariableStore::Var& right, VariableStore::Var& out)
+                        {
+                            intRep.lessThanVar(left, right, out);
+                        });
+
+}
+
+Expr::ExpressionElement ExpressionHelper::LessThanEqualVar(Expr::ExpressionElement& left, Expr::ExpressionElement& right)
+{
+    return GenericBinaryOp(left, right,
+                        [] (IntRep::IntRep& intRep, VariableStore::Var& left, VariableStore::Var& right, VariableStore::Var& out)
+                        {
+                            intRep.lessThanEqualVar(left, right, out);
+                        });
+
+}
+
+Expr::ExpressionElement ExpressionHelper::GreaterThanVar(Expr::ExpressionElement& left, Expr::ExpressionElement& right)
+{
+    return GenericBinaryOp(left, right,
+                        [] (IntRep::IntRep& intRep, VariableStore::Var& left, VariableStore::Var& right, VariableStore::Var& out)
+                        {
+                            intRep.greaterThanVar(left, right, out);
+                        });
+
+}
+
+Expr::ExpressionElement ExpressionHelper::GreaterThanEqualVar(Expr::ExpressionElement& left, Expr::ExpressionElement& right)
+{
+    return GenericBinaryOp(left, right,
+                        [] (IntRep::IntRep& intRep, VariableStore::Var& left, VariableStore::Var& right, VariableStore::Var& out)
+                        {
+                            intRep.greaterThanEqualVar(left, right, out);
+                        });
+
+}
+
+Expr::ExpressionElement ExpressionHelper::EqualVar(Expr::ExpressionElement& left, Expr::ExpressionElement& right)
+{
+    return GenericBinaryOp(left, right,
+                        [] (IntRep::IntRep& intRep, VariableStore::Var& left, VariableStore::Var& right, VariableStore::Var& out)
+                        {
+                            intRep.equalVar(left, right, out);
+                        });
+
+}
+
+Expr::ExpressionElement ExpressionHelper::NotEqualVar(Expr::ExpressionElement& left, Expr::ExpressionElement& right)
+{
+    return GenericBinaryOp(left, right,
+                        [] (IntRep::IntRep& intRep, VariableStore::Var& left, VariableStore::Var& right, VariableStore::Var& out)
+                        {
+                            intRep.notEqualVar(left, right, out);
+                        });
+}
+
+Expr::ExpressionElement ExpressionHelper::SimpleAssignment(Expr::ExpressionElement& left, Expr::ExpressionElement& right)
+{
+    return GenericBinaryOp(left, right,
+                        [] (IntRep::IntRep& intRep, VariableStore::Var& left, VariableStore::Var& right, VariableStore::Var& out)
+                        {
+                            intRep.assignSymbol(left, right, out);
+                        });
+}
+
 Expr::ExpressionElement ExpressionHelper::GenericBinaryOp(Expr::ExpressionElement& left,
                                                           Expr::ExpressionElement& right,
                                         std::function<void (IntRep::IntRep& intrep,
@@ -228,7 +297,7 @@ Expr::ExpressionElement ExpressionHelper::GenericBinaryOp(Expr::ExpressionElemen
             break;
         }
         default:
-            throw std::runtime_error("Cannot add elements");
+            throw std::runtime_error("Cannot combine elements");
     }
 
     return e;
