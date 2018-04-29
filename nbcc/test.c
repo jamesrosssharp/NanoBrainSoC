@@ -32,7 +32,7 @@ void putch(char c)
                     : "r1"
                 );
 }
-
+/*
 short myfunc()
 {
     return (((2 + 3) + (4 - 5) - 1) & 1) ^ 3;
@@ -86,6 +86,53 @@ void myfunc5(short d)
     putch('\r');
     putch('\n');
 }
+*/
+
+/*void myfunc6(short e)
+{
+
+    switch (e)
+    {
+        case '1':
+            putch('A');
+            break;
+        case '2':
+            putch('B');
+            break;
+        case '3':
+            putch('C');
+        default:
+            putch('D');
+    }
+
+    putch('\r');
+    putch('\n');
+
+}
+*/
+
+short myfunc7()
+{
+    putch('C');
+    return 3;
+}
+
+void myfunc8(short a, short b)
+{
+
+    if (a && !b)
+    {
+        putch('A');
+    }
+    else if (a || myfunc7())
+    {
+        putch('B');
+    }
+
+    putch('\r');
+    putch('\n');
+
+}
 
 short main ()
 {
@@ -99,6 +146,13 @@ short main ()
 
     myfunc2(myfunc());
     myfunc3(5);
-    myfunc4(5);*/
-    myfunc5(0);
+    myfunc4(5);
+    myfunc5(0);*/
+  //  myfunc6('1');
+
+    myfunc8(0, 0);
+    myfunc8(1, 0);
+    myfunc8(0, 1);
+    myfunc8(1, 1);
+
 }

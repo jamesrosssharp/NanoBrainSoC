@@ -241,7 +241,12 @@ void Expression::convertExpressionType(ExpressionElement& e, Syntax::BinaryExpre
         case Syntax::BinaryExpressionType::GreaterThanOrEqual:
             e.elem = ElementType::kGreaterThanOrEqual;
             break;
-
+        case Syntax::BinaryExpressionType::LogicalAnd:
+            e.elem = ElementType::kLogicalAnd;
+            break;
+        case Syntax::BinaryExpressionType::LogicalOr:
+            e.elem = ElementType::kLogicalOr;
+            break;
     }
 }
 
@@ -414,6 +419,17 @@ std::ostream& operator << (std::ostream& os, const ExpressionElement& elem)
         case ElementType::kAssignment:
         {
             os << " = ";
+            break;
+        }
+        case ElementType::kLogicalAnd:
+        {
+            os << " && ";
+            break;
+        }
+        case ElementType::kLogicalOr:
+        {
+            os << " || ";
+            break;
         }
         default:
             break;
@@ -484,9 +500,9 @@ IntRep::IntRep Expression::generateIntRep()
 
 Expression Expression::_generateIntRep()
 {
-    // Search for sub expressions and evaluate them
-
     std::cout << *this << std::endl;
+
+    // Search for sub expressions and evaluate them
 
     Expression  e, sube;
     uint32_t     stackDepth = 0;
@@ -551,11 +567,6 @@ Expression Expression::_generateIntRep()
     e = e.doImmediates();
 
     // Reduce function calls
-    //
-    //  TODO:
-    //  If function calls appear on the other side of a || or && operator, we only evaluate them
-    //  if the needed. Need to fix this. For the time being, evaluate all function calls
-    //
 
     e = e.doFunctionCalls();
 
@@ -566,6 +577,10 @@ Expression Expression::_generateIntRep()
     e = e.doUnaryOp(ElementType::kPreDecrement,  ExpressionHelper::PreDecVar);
     e = e.doUnaryOp(ElementType::kPreIncrement,  ExpressionHelper::PreIncVar);
 
+    e = e.doUnaryOp(ElementType::kUnaryNegation,    ExpressionHelper::NegVar);
+    e = e.doUnaryOp(ElementType::kUnaryLogicalNot,  ExpressionHelper::LogicalNotVar);
+    e = e.doUnaryOp(ElementType::kUnaryBitwiseNot,  ExpressionHelper::BitwiseNotVar);
+
     // Evaluate binary operators
 
     e = e.doOp(ElementType::kPlus,          ExpressionHelper::AddVar);
@@ -574,12 +589,12 @@ Expression Expression::_generateIntRep()
     e = e.doOp(ElementType::kShiftRight,    ExpressionHelper::ShrVar);
 
     //< <= 	For relational operators < and ≤ respectively
-    e = e.doOp(ElementType::kLessThan,          ExpressionHelper::LessThanVar);
-    e = e.doOp(ElementType::kLessThanOrEqual,     ExpressionHelper::LessThanEqualVar);
+    e = e.doOp(ElementType::kLessThan,        ExpressionHelper::LessThanVar);
+    e = e.doOp(ElementType::kLessThanOrEqual, ExpressionHelper::LessThanEqualVar);
 
     //> >= 	For relational operators > and ≥ respectively
-    e = e.doOp(ElementType::kGreaterThan,       ExpressionHelper::GreaterThanVar);
-    e = e.doOp(ElementType::kGreaterThanOrEqual,  ExpressionHelper::GreaterThanEqualVar);
+    e = e.doOp(ElementType::kGreaterThan,        ExpressionHelper::GreaterThanVar);
+    e = e.doOp(ElementType::kGreaterThanOrEqual, ExpressionHelper::GreaterThanEqualVar);
 
     //== != 	For relational = and ≠ respectively
     e = e.doOp(ElementType::kEqual,         ExpressionHelper::EqualVar);
@@ -591,6 +606,14 @@ Expression Expression::_generateIntRep()
     e = e.doOp(ElementType::kXor, ExpressionHelper::XorVar);
     // 	|
     e = e.doOp(ElementType::kOr, ExpressionHelper::OrVar);
+
+    // Logical AND
+
+    e = e.doOp(ElementType::kLogicalAnd, ExpressionHelper::LogicalAndVar);
+
+    // Logical OR
+
+    e = e.doOp(ElementType::kLogicalOr, ExpressionHelper::LogicalOrVar);
 
     // Simple assignment
 
@@ -693,8 +716,6 @@ Expression  Expression::doRightToLeftOp(ElementType type,
     int idx = m_elements.size() - 2;
 
     std::vector<ExpressionElement> vec;
-
-    std::cout << *this << std::endl;
 
     for (auto iter = m_elements.rbegin(); iter != m_elements.rend(); iter++)
     {

@@ -55,6 +55,10 @@ namespace Syntax
         IfElseStatement         = 24,
         DoWhileStatement        = 25,
         ForLoop                 = 26,
+        Case                    = 27,
+        Switch                  = 28,
+        Default                 = 29,
+        Break                   = 30,
     };
 
     enum class UnaryExpressionType
@@ -794,6 +798,101 @@ namespace Syntax
     private:
 
         std::list<RegisterDescription*> m_registers;
+
+    };
+
+
+    class Case : public Syntagma
+    {
+    public:
+        Case(Syntax::Syntagma* expr) :
+            Syntagma(ElementType::Case),
+            m_expr(expr)
+        {
+
+        }
+
+        ~Case()
+        {
+            delete m_expr;
+        }
+
+        void print(std::ostream &os, int indent) const;
+
+        Syntax::Syntagma* getExpression() { return m_expr; }
+
+    private:
+
+        Syntax::Syntagma* m_expr;
+
+    };
+
+    class Switch : public Syntagma
+    {
+    public:
+        Switch(Syntax::Syntagma* expression, Syntax::Block* block) :
+            Syntagma(ElementType::Switch),
+            m_expr(expression),
+            m_block(block)
+        {
+
+        }
+
+        ~Switch()
+        {
+            delete m_expr;
+            delete m_block;
+        }
+
+        void print(std::ostream &os, int indent) const;
+
+        Syntax::Block* getBlock() const { return m_block; }
+        Syntax::Syntagma* getExpression() const { return m_expr; }
+
+    private:
+
+        Syntax::Syntagma* m_expr;
+        Syntax::Block* m_block;
+
+    };
+
+    class Break : public Syntagma
+    {
+    public:
+        Break() :
+            Syntagma(ElementType::Break)
+        {
+
+        }
+
+        ~Break()
+        {
+        }
+
+        void print(std::ostream &os, int indent) const;
+
+
+    private:
+
+    };
+
+    class Default : public Syntagma
+    {
+    public:
+        Default() :
+            Syntagma(ElementType::Default)
+        {
+
+        }
+
+        ~Default()
+        {
+        }
+
+        void print(std::ostream &os, int indent) const;
+
+
+    private:
 
     };
 

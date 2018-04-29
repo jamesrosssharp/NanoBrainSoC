@@ -134,6 +134,10 @@ namespace IntRep
         void preDecVar (const VariableStore::Var& temp, const VariableStore::Var& out);
         void preIncVar (const VariableStore::Var& temp, const VariableStore::Var& out);
 
+        void logicalNotVar (const VariableStore::Var& temp, const VariableStore::Var& out);
+        void bitwiseNotVar (const VariableStore::Var& temp, const VariableStore::Var& out);
+        void negVar        (const VariableStore::Var& temp, const VariableStore::Var& out);
+
         void loadVar(const VariableStore::Var& src, const VariableStore::Var& dest);
         void incVar(const VariableStore::Var& v);
         void decVar(const VariableStore::Var& v);

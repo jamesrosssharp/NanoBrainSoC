@@ -40,6 +40,7 @@ The Expression class is used to simplify expressions and generate an intermediat
 
 #include <iostream>
 #include <fstream>
+#include <utility>
 
 using namespace CodeGen;
 
@@ -601,129 +602,160 @@ void CodeGenerator::generateBlock(const Syntax::Block *b, std::stringstream &ss,
 
     for (Syntax::Syntagma* statement : b->statements())
     {
-
-        lastStatementIsReturn = false; // this will be set if we get a return statement
-
-        switch (statement->type())
-        {
-            case Syntax::ElementType::ReturnStatement:
-            {
-                lastStatementIsReturn = true;
-
-                Syntax::ReturnStatement* r = dynamic_cast<Syntax::ReturnStatement*>(statement);
-
-                if (r == nullptr)
-                    throw std::runtime_error("Could not cast return statement!");
-
-                generateReturnStatement(r, ss, callsFunctions);
-
-                break;
-            }
-            case Syntax::ElementType::AsmStatement:
-            {
-
-                Syntax::AsmStatement* a = dynamic_cast<Syntax::AsmStatement*>(statement);
-
-                if (a == nullptr)
-                    throw std::runtime_error("Could not cast to an asm statement!");
-
-                generateAsmStatement(a, ss);
-
-                break;
-
-            }
-            case Syntax::ElementType::FunctionCall:
-            {
-                Syntax::FunctionCall* f = dynamic_cast<Syntax::FunctionCall*>(statement);
-
-                if (f == nullptr)
-                    throw std::runtime_error("Could not cast to a function call!");
-
-                generateFunctionCall(f, ss);
-
-                callsFunctions = true;  // Need to set this so that the link register will be preserved in function
-                                        // prologue for correct operation
-
-                break;
-            }
-            case Syntax::ElementType::IfStatement:
-            {
-                Syntax::IfStatement* i = dynamic_cast<Syntax::IfStatement*>(statement);
-
-                if (i == nullptr)
-                    throw std::runtime_error("Could not cast to an if statement!");
-
-                generateIfStatement(i, ss, callsFunctions);
-
-                break;
-            }
-            case Syntax::ElementType::IfElseStatement:
-            {
-                Syntax::IfElseStatement* i = dynamic_cast<Syntax::IfElseStatement*>(statement);
-
-                if (i == nullptr)
-                    throw std::runtime_error("Could not cast to an if else statement!");
-
-                generateIfElseStatement(i, ss, callsFunctions);
-
-                break;
-            }
-            case Syntax::ElementType::WhileStatement:
-            {
-                Syntax::WhileStatement* w = dynamic_cast<Syntax::WhileStatement*>(statement);
-
-                if (w == nullptr)
-                    throw std::runtime_error("Could not cast to an if else statement!");
-
-                generateWhileStatement(w, ss, callsFunctions);
-
-                break;
-            }
-            case Syntax::ElementType::DoWhileStatement:
-            {
-                Syntax::DoWhileStatement* w = dynamic_cast<Syntax::DoWhileStatement*>(statement);
-
-                if (w == nullptr)
-                    throw std::runtime_error("Could not cast to a DoWhile statement!");
-
-                generateDoWhileStatement(w, ss, callsFunctions);
-
-                break;
-            }
-            case Syntax::ElementType::ForLoop:
-            {
-                Syntax::ForLoop* l = dynamic_cast<Syntax::ForLoop*>(statement);
-
-                if (l == nullptr)
-                    throw std::runtime_error("Could not cast to a ForLoop statement!");
-
-                generateForLoopStatement(l, ss, callsFunctions);
-
-                break;
-            }
-            case Syntax::ElementType::UnaryExpression:
-            case Syntax::ElementType::BinaryExpression:
-            {
-
-                buildAndCheckStandaloneExpression(statement, ss, callsFunctions);
-
-                break;
-            }
-            default:
-            {
-                std::stringstream err;
-
-                err << "Unsupported statement: " << (uint32_t)statement->type();
-                throw std::runtime_error(err.str());
-            }
-        }
-
+        generateStatement(statement, ss, callsFunctions, lastStatementIsReturn);
     }
 
     popScope();
 
 }
 
+void CodeGenerator::generateStatement(Syntax::Syntagma* statement, std::stringstream& ss,
+                   bool& callsFunctions, bool& isReturn)
+{
+
+    isReturn = false;
+
+    switch (statement->type())
+    {
+        case Syntax::ElementType::ReturnStatement:
+        {
+            isReturn = true;
+
+            Syntax::ReturnStatement* r = dynamic_cast<Syntax::ReturnStatement*>(statement);
+
+            if (r == nullptr)
+                throw std::runtime_error("Could not cast return statement!");
+
+            generateReturnStatement(r, ss, callsFunctions);
+
+            break;
+        }
+        case Syntax::ElementType::AsmStatement:
+        {
+
+            Syntax::AsmStatement* a = dynamic_cast<Syntax::AsmStatement*>(statement);
+
+            if (a == nullptr)
+                throw std::runtime_error("Could not cast to an asm statement!");
+
+            generateAsmStatement(a, ss);
+
+            break;
+
+        }
+        case Syntax::ElementType::FunctionCall:
+        {
+            Syntax::FunctionCall* f = dynamic_cast<Syntax::FunctionCall*>(statement);
+
+            if (f == nullptr)
+                throw std::runtime_error("Could not cast to a function call!");
+
+            generateFunctionCall(f, ss);
+
+            callsFunctions = true;  // Need to set this so that the link register will be preserved in function
+                                    // prologue for correct operation
+
+            break;
+        }
+        case Syntax::ElementType::IfStatement:
+        {
+            Syntax::IfStatement* i = dynamic_cast<Syntax::IfStatement*>(statement);
+
+            if (i == nullptr)
+                throw std::runtime_error("Could not cast to an if statement!");
+
+            generateIfStatement(i, ss, callsFunctions);
+
+            break;
+        }
+        case Syntax::ElementType::IfElseStatement:
+        {
+            Syntax::IfElseStatement* i = dynamic_cast<Syntax::IfElseStatement*>(statement);
+
+            if (i == nullptr)
+                throw std::runtime_error("Could not cast to an if else statement!");
+
+            generateIfElseStatement(i, ss, callsFunctions);
+
+            break;
+        }
+        case Syntax::ElementType::WhileStatement:
+        {
+            Syntax::WhileStatement* w = dynamic_cast<Syntax::WhileStatement*>(statement);
+
+            if (w == nullptr)
+                throw std::runtime_error("Could not cast to an if else statement!");
+
+            generateWhileStatement(w, ss, callsFunctions);
+
+            break;
+        }
+        case Syntax::ElementType::DoWhileStatement:
+        {
+            Syntax::DoWhileStatement* w = dynamic_cast<Syntax::DoWhileStatement*>(statement);
+
+            if (w == nullptr)
+                throw std::runtime_error("Could not cast to a DoWhile statement!");
+
+            generateDoWhileStatement(w, ss, callsFunctions);
+
+            break;
+        }
+        case Syntax::ElementType::ForLoop:
+        {
+            Syntax::ForLoop* l = dynamic_cast<Syntax::ForLoop*>(statement);
+
+            if (l == nullptr)
+                throw std::runtime_error("Could not cast to a ForLoop statement!");
+
+            generateForLoopStatement(l, ss, callsFunctions);
+
+            break;
+        }
+        case Syntax::ElementType::UnaryExpression:
+        case Syntax::ElementType::BinaryExpression:
+        {
+
+            buildAndCheckStandaloneExpression(statement, ss, callsFunctions);
+
+            break;
+        }
+        case Syntax::ElementType::Switch:
+        {
+            Syntax::Switch* s = dynamic_cast<Syntax::Switch*>(statement);
+
+            if (s == nullptr)
+                throw std::runtime_error("Could not cast to a Switch statement!");
+
+            generateSwitchStatement(s, ss, callsFunctions);
+
+            break;
+        }
+        case Syntax::ElementType::Default:
+        case Syntax::ElementType::Case:
+        {
+            throw std::runtime_error("Default / Case outside of a switch statement");
+        }
+        case Syntax::ElementType::Break:
+        {
+            if (m_breakStack.size() == 0)
+                throw std::runtime_error("Break statement outside of for / while / switch");
+
+            LabelStore::Label l = m_breakStack.back();
+
+            ss << SPACES "jump " << l->asmName << std::endl;
+
+            break;
+        }
+        default:
+        {
+            std::stringstream err;
+
+            err << "Unsupported statement: " << (uint32_t)statement->type();
+            throw std::runtime_error(err.str());
+        }
+    }
+}
 
 void CodeGenerator::generateReturnStatement(const Syntax::ReturnStatement* r,
                                             std::stringstream& ss,
@@ -1295,4 +1327,117 @@ void CodeGenerator::generateForLoopStatement(const Syntax::ForLoop* l, std::stri
     ss << l2->asmName << ":" << std::endl;
 }
 
+void CodeGenerator::generateSwitchStatement(const Syntax::Switch* s,
+                                            std::stringstream&  ss,
+                                            bool& callsFunctions)
+{
 
+    std::stringstream genCode;
+
+    // Push final label (to break to) to "break stack"
+
+    LabelStore::Label endSwitch = LabelStore::getInstance()->declareTempLab();
+
+    m_breakStack.push_back(endSwitch);
+
+    // Parse all statements in the switch block and deduce jump table.
+
+    Syntax::Block* b = s->getBlock();
+
+    std::vector<std::pair<LabelStore::Label, Syntax::Syntagma*>> labels;
+
+    LabelStore::Label defaultLabel{0};
+
+    bool dummy;
+
+    for (Syntax::Syntagma* syn : b->statements())
+    {
+        switch (syn->type())
+        {
+            case Syntax::ElementType::Case:
+            {
+                Syntax::Case* cs = dynamic_cast<Syntax::Case*>(syn);
+
+                if (cs == nullptr)
+                    throw std::runtime_error("Could not cast to case!");
+
+                LabelStore::Label l = LabelStore::getInstance()->declareTempLab();
+
+                genCode << l->asmName << ":" << std::endl;
+
+                labels.emplace_back(std::make_pair(l, cs->getExpression()));
+
+                break;
+            }
+            case Syntax::ElementType::Default:
+            {
+                defaultLabel = LabelStore::getInstance()->declareTempLab();
+
+                genCode << defaultLabel->asmName << ":" << std::endl;
+
+                break;
+            }
+            default:
+                generateStatement(syn, genCode, callsFunctions, dummy);
+
+                break;
+        }
+    }
+
+    // Generate jump table
+
+    IntRep::IntRep ir;
+
+    Expr::Expression e;
+
+    e.fromSyntaxTree(s->getExpression());
+
+    ir = e.generateIntRep();
+
+    VariableStore::Var outv = ir.getOutputVar();
+
+    IntRep::IntRep ir2;
+
+    ir2.assimilate(ir);
+
+        // for each case statement we found, evaluate the expression (todo: check that these reduce to
+        // an integer constant
+
+    for (auto p : labels)
+    {
+        Expr::Expression ee;
+        ee.fromSyntaxTree(p.second);
+
+        IntRep::IntRep ir3 = ee.generateIntRep();
+
+        VariableStore::Var evalv = ir3.getOutputVar();
+
+        ir2.assimilate(ir3);
+
+        ir2.compare(outv, evalv);
+        ir2.jumpZ(p.first);
+
+        ir2.deleteTemporary(evalv);
+
+    }
+
+    if (defaultLabel != LabelStore::Label{0})
+    {
+        ir2.jump(defaultLabel);
+    }
+    else
+    {
+        ir2.jump(endSwitch);
+    }
+
+    ir2.deleteTemporary(outv);
+
+    ss << IntRepCompiler::GenerateAssembly(ir2, m_registers16, false);
+
+    ss << genCode.str();
+
+    ss << endSwitch->asmName << ":" << std::endl;
+
+    m_breakStack.pop_back();
+
+}

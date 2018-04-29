@@ -64,6 +64,10 @@ namespace Expr
 
         kAssignment,
 
+        kLogicalAnd,
+        kLogicalOr,
+
+
     };
 
     class Expression;

@@ -36,6 +36,7 @@ public:
         }
 
         friend bool ::operator == (const Label&, const Label&);
+        friend bool ::operator != (const Label&, const Label&);
     };
 
     static LabelStore* getInstance();
@@ -64,4 +65,9 @@ private:
 inline bool operator == (const LabelStore::Label& l1, const LabelStore::Label& l2)
 {
     return l1.m_handle == l2.m_handle;
+}
+
+inline bool operator != (const LabelStore::Label& l1, const LabelStore::Label& l2)
+{
+    return l1.m_handle != l2.m_handle;
 }

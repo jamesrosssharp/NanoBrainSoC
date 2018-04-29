@@ -82,7 +82,12 @@ int g_str_idx = 0;
 "while"           { return WHILE;  }
 "do"              { return DO;     }
 "if"              { return IF;     }
+
 "switch"          { return SWITCH; }
+"case"            { return CASE;   }
+"default"         { return DEFAULT;}
+"break"           { return BREAK;  }
+
 "else"            { return ELSE;   }
 "for"             { return FOR;    }
 
@@ -106,6 +111,12 @@ int g_str_idx = 0;
 "|"  { return '|'; }
 "="  { return '='; }
 "^"  { return '^'; }
+
+"||" { return LOGICAL_OR; }
+"&&" { return LOGICAL_AND; }
+
+"~"  { return '~'; }
+"!"  { return '!'; }
 
 "--" { return DECREMENT; }
 "++" { return INCREMENT; }

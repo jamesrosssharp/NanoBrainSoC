@@ -779,3 +779,77 @@ void handleNotEqual()
 {
     handleExpressionArith(Syntax::BinaryExpressionType::NotEqual);
 }
+
+void handleSwitch()
+{
+    Syntax::Block* block = dynamic_cast<Syntax::Block*>(g_syntaxStack.pop());
+
+    Syntax::Syntagma* expr = g_syntaxStack.pop();
+
+    Syntax::Syntagma* sw = new Syntax::Switch(expr, block);
+
+    g_syntaxStack.push(sw);
+}
+
+void handleDefault()
+{
+    Syntax::Syntagma* def = new Syntax::Default();
+
+    g_syntaxStack.push(def);
+}
+
+void handleBreak()
+{
+    Syntax::Syntagma* brk = new Syntax::Break();
+
+    g_syntaxStack.push(brk);
+}
+
+void handleCase()
+{
+    Syntax::Syntagma* expr = g_syntaxStack.pop();
+
+    Syntax::Case* cs = new Syntax::Case(expr);
+
+    g_syntaxStack.push(cs);
+
+}
+
+void handleLogicalAnd()
+{
+    // addition
+    handleExpressionArith(Syntax::BinaryExpressionType::LogicalAnd);
+}
+
+void handleLogicalOr()
+{
+    // addition
+    handleExpressionArith(Syntax::BinaryExpressionType::LogicalOr);
+}
+
+void handleLogicalNot()
+{
+    Syntax::Syntagma* expr = g_syntaxStack.pop();
+
+    Syntax::UnaryExpression* un = new Syntax::UnaryExpression(Syntax::UnaryExpressionType::LogicalNot, expr);
+
+    g_syntaxStack.push(un);
+}
+
+void handleBitwiseNot()
+{
+    Syntax::Syntagma* expr = g_syntaxStack.pop();
+
+    Syntax::UnaryExpression* un = new Syntax::UnaryExpression(Syntax::UnaryExpressionType::BitwiseNot, expr);
+
+    g_syntaxStack.push(un);
+}
+
+void handleUnaryNegation()
+{
+    Syntax::Syntagma* expr = g_syntaxStack.pop();
+
+    Syntax::UnaryExpression* un = new Syntax::UnaryExpression(Syntax::UnaryExpressionType::Negation, expr);
+
+    g_syntaxStack.push(un);
+}

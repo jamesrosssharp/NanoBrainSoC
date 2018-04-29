@@ -35,6 +35,9 @@ namespace ExpressionHelper
     Expr::ExpressionElement XorVar(Expr::ExpressionElement& left, Expr::ExpressionElement& right);
     Expr::ExpressionElement OrVar(Expr::ExpressionElement& left, Expr::ExpressionElement& right);
 
+    Expr::ExpressionElement LogicalAndVar(Expr::ExpressionElement& left, Expr::ExpressionElement& right);
+    Expr::ExpressionElement LogicalOrVar(Expr::ExpressionElement& left, Expr::ExpressionElement& right);
+
     Expr::ExpressionElement DoFunc(Expr::ExpressionElement& expr);
     Expr::ExpressionElement DoImm(Expr::ExpressionElement& expr);
     Expr::ExpressionElement DoSym(Expr::ExpressionElement& expr);
@@ -43,6 +46,10 @@ namespace ExpressionHelper
     Expr::ExpressionElement PostIncVar(Expr::ExpressionElement& expr);
     Expr::ExpressionElement PreDecVar(Expr::ExpressionElement& expr);
     Expr::ExpressionElement PreIncVar(Expr::ExpressionElement& expr);
+
+    Expr::ExpressionElement LogicalNotVar(Expr::ExpressionElement& expr);
+    Expr::ExpressionElement BitwiseNotVar(Expr::ExpressionElement& expr);
+    Expr::ExpressionElement NegVar(Expr::ExpressionElement& expr);
 
     Expr::ExpressionElement LessThanVar(Expr::ExpressionElement& left, Expr::ExpressionElement& right);
     Expr::ExpressionElement LessThanEqualVar(Expr::ExpressionElement& left, Expr::ExpressionElement& right);

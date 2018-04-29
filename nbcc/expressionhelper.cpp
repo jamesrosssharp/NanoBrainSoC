@@ -487,3 +487,102 @@ Expr::ExpressionElement ExpressionHelper::GenericUnaryOp(Expr::ExpressionElement
     return e;
 
 }
+
+Expr::ExpressionElement ExpressionHelper::LogicalAndVar(Expr::ExpressionElement& left, Expr::ExpressionElement& right)
+{
+    Expr::ExpressionElement e;
+
+    e.elem = Expr::ElementType::kIntRepPlaceHolder;
+
+    e.intRep.assimilate(left.intRep);
+
+    VariableStore::Var v1 = left.intRep.getOutputVar();
+    VariableStore::Var v2 = right.intRep.getOutputVar();
+
+    LabelStore::Label l1 = LabelStore::getInstance()->declareTempLab();
+    LabelStore::Label l2 = LabelStore::getInstance()->declareTempLab();
+
+    VariableStore::Var out = e.intRep.declareTemporary();
+
+    e.intRep.test(v1, 0xffff);
+    e.intRep.jumpZ(l1);
+
+    e.intRep.assimilate(right.intRep);
+
+    e.intRep.test(v2, 0xffff);
+    e.intRep.jumpZ(l1);
+
+    e.intRep.loadImm(out, 1);
+    e.intRep.jump(l2);
+
+    e.intRep.labelDec(l1);
+    e.intRep.loadImm(out, 0);
+
+    e.intRep.labelDec(l2);
+
+    e.intRep.deleteTemporary(v1);
+    e.intRep.deleteTemporary(v2);
+
+    e.intRep.output(out);
+
+    return e;
+
+}
+
+Expr::ExpressionElement ExpressionHelper::LogicalOrVar(Expr::ExpressionElement& left, Expr::ExpressionElement& right)
+{
+    Expr::ExpressionElement e;
+
+    e.elem = Expr::ElementType::kIntRepPlaceHolder;
+
+    e.intRep.assimilate(left.intRep);
+
+    VariableStore::Var v1 = left.intRep.getOutputVar();
+    VariableStore::Var v2 = right.intRep.getOutputVar();
+
+    LabelStore::Label l1 = LabelStore::getInstance()->declareTempLab();
+    LabelStore::Label l2 = LabelStore::getInstance()->declareTempLab();
+
+    VariableStore::Var out = e.intRep.declareTemporary();
+
+    e.intRep.test(v1, 0xffff);
+    e.intRep.jumpNZ(l1);
+
+    e.intRep.assimilate(right.intRep);
+
+    e.intRep.test(v2, 0xffff);
+    e.intRep.jumpNZ(l1);
+
+    e.intRep.loadImm(out, 0);
+    e.intRep.jump(l2);
+
+    e.intRep.labelDec(l1);
+    e.intRep.loadImm(out, 1);
+
+    e.intRep.labelDec(l2);
+
+    e.intRep.deleteTemporary(v1);
+    e.intRep.deleteTemporary(v2);
+
+    e.intRep.output(out);
+
+    return e;
+}
+
+Expr::ExpressionElement ExpressionHelper::LogicalNotVar(Expr::ExpressionElement& expr)
+{
+    return GenericUnaryOp(expr, [] (IntRep::IntRep& intRep, VariableStore::Var& v, VariableStore::Var& out)
+                            { intRep.logicalNotVar(v, out); });
+}
+
+Expr::ExpressionElement ExpressionHelper::BitwiseNotVar(Expr::ExpressionElement& expr)
+{
+    return GenericUnaryOp(expr, [] (IntRep::IntRep& intRep, VariableStore::Var& v, VariableStore::Var& out)
+                            { intRep.bitwiseNotVar(v, out); });
+}
+
+Expr::ExpressionElement ExpressionHelper::NegVar(Expr::ExpressionElement& expr)
+{
+    return GenericUnaryOp(expr, [] (IntRep::IntRep& intRep, VariableStore::Var& v, VariableStore::Var& out)
+                            { intRep.negVar(v, out); });
+}

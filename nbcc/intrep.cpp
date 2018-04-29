@@ -685,3 +685,32 @@ void IntRep::IntRep::assignSymbol(VariableStore::Var& v1, VariableStore::Var& v2
 
     output(out);
 }
+
+void IntRep::IntRep::logicalNotVar (const VariableStore::Var& temp, const VariableStore::Var& out)
+{
+    LabelStore::Label l1 = LabelStore::getInstance()->declareTempLab();
+    LabelStore::Label l2 = LabelStore::getInstance()->declareTempLab();
+
+    test(temp, 0xffff);
+    jumpZ(l1);
+
+    loadImm(out, 0);
+    jump(l2);
+
+    labelDec(l1);
+    loadImm(out, 1);
+
+    labelDec(l2);
+
+    output(out);
+}
+
+void IntRep::IntRep::bitwiseNotVar (const VariableStore::Var& temp, const VariableStore::Var& out)
+{
+    // TODO
+}
+
+void IntRep::IntRep::negVar        (const VariableStore::Var& temp, const VariableStore::Var& out)
+{
+    // TODO
+}

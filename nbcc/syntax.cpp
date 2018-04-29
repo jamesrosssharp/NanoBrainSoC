@@ -49,7 +49,7 @@ void Immediate::print(std::ostream &os, int indent) const
             os << " FLOAT " << m_value.f;
             break;
         case ImmediateType::kChar:
-            os << " CHAR " << m_string;
+            os << " CHAR '" << m_string << "'";
             break;
         case ImmediateType::kStringLiteral:
             os << " STRING " << m_string;
@@ -412,6 +412,8 @@ void IfElseStatement::print(std::ostream &os, int indent) const
 
     os << "IF" << std::endl;
 
+    m_condition->print(os, indent + 1);
+
     m_ifBlock->print(os, indent + 1);
 
     PrintIndent(os, indent);
@@ -448,3 +450,47 @@ void ForLoop::print(std::ostream &os, int indent) const
     m_block->print(os, indent + 1);
 
 }
+
+void Case::print(std::ostream &os, int indent) const
+{
+    PrintIndent(os, indent);
+
+    os << "CASE " << std::endl;
+
+    m_expr->print(os, indent + 1);
+
+    PrintIndent(os, indent);
+
+    os << " : " << std::endl;
+}
+
+void Switch::print(std::ostream &os, int indent) const
+{
+    PrintIndent(os, indent);
+
+    os << "SWITCH (" << std::endl;
+
+    m_expr->print(os, indent + 1);
+
+    PrintIndent(os, indent);
+
+    os << ") " << std::endl;
+
+    m_block->print(os, indent + 1);
+
+}
+
+void Default::print(std::ostream &os, int indent) const
+{
+    PrintIndent(os, indent);
+
+    os << "DEFAULT :" << std::endl;
+}
+
+void Break::print(std::ostream &os, int indent) const
+{
+    PrintIndent(os, indent);
+
+    os << "BREAK" << std::endl;
+}
+

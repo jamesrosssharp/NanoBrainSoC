@@ -48,7 +48,7 @@ void yyerror(const char *s);
 
 %token ASM VOLATILE CONST STATIC AUTO
 
-%token RETURN WHILE IF SWITCH CASE ELSE DO FOR
+%token RETURN WHILE IF SWITCH CASE DEFAULT ELSE DO FOR BREAK
 
 %token LEFT_BRACE RIGHT_BRACE
 
@@ -57,6 +57,8 @@ void yyerror(const char *s);
 %token DECREMENT INCREMENT
 
 %token LESS_THAN LESS_THAN_EQUAL GREATER_THAN GREATER_THAN_EQUAL EQUAL NOT_EQUAL
+
+%token LOGICAL_AND LOGICAL_OR
 
 %token <integerLiteral> INT
 %token <hexLiteral>     HEXVAL
@@ -115,7 +117,11 @@ statement: return_statement     |
            declaration          |
            asm_block            |
            do_while_statement   |
-           for_loop   |
+           for_loop             |
+           switch_statement     |
+           case_statement       |
+           default_statement    |
+           break_statement      |
            expression ';' ;
 
 /* asm block */
@@ -167,6 +173,22 @@ ifelse_statement_basic: IF '(' expression ')' block ELSE block { handleIfElse1()
 for_loop:    FOR '(' expression ';' expression ';' expression ')' block { handleForLoop1(); }    |
              FOR '(' expression ';' expression ';' expression ')' statement ';' {handleForLoop2(); }
 
+/* switch statement */
+
+switch_statement: SWITCH '(' expression ')' block { handleSwitch(); }
+
+/* default statement */
+
+default_statement: DEFAULT ':' { handleDefault(); }
+
+/* break statement */
+
+break_statement: BREAK ';' { handleBreak(); }
+
+/* case statement */
+
+case_statement: CASE expression ':' { handleCase(); }
+
 /* assignment */
 
 assignment:      SYMBOL '=' expression           { handleAssignment($1); }
@@ -178,31 +200,36 @@ declaration:    type SYMBOL '=' expression ';'      { handleDeclaration($2); }
 /* expression */
 
 expression:
-        assignment   |
-        SYMBOL          { handleExpressionSymbol($1); }             |
-        INT             { handleExpressionIntImmediate($1); }       |
-        CH_LITERAL      { handleExpressionCharLiteral($1); }        |
-        expression '+' expression { handleExpressionAddition(); }   |
-        expression '-' expression { handleExpressionSubtraction(); }   |
-        expression '*' expression { handleExpressionMultiplication(); }   |
-        expression '/' expression { handleExpressionDivision(); }   |
-        expression '&' expression { handleExpressionBitwiseAnd(); }   |
-        expression '|' expression { handleExpressionBitwiseOr(); }   |
-        expression '^' expression { handleExpressionBitwiseXor(); } |
-        expression SHIFT_LEFT expression    { handleExpressionShiftLeft(); } |
-        expression SHIFT_RIGHT expression   { handleExpressionShiftRight(); } |
-        '(' expression ')'                  { handleGroupedExpression(); } |
-        SYMBOL parameter_list               { handleExpressionFunctionCall($1); } |
-        SYMBOL INCREMENT                    { handleExpressionPostIncrement($1); } |
-        INCREMENT SYMBOL                     { handleExpressionPreIncrement($2); } |
-        SYMBOL DECREMENT                     { handleExpressionPostDecrement($1); } |
-        DECREMENT SYMBOL                     { handleExpressionPreDecrement($2); }  |
-        expression LESS_THAN expression          { handleLessThan(); }                       |
-        expression LESS_THAN_EQUAL expression    { handleLessThanEqual(); }                  |
-        expression GREATER_THAN expression       { handleGreaterThan(); }                    |
-        expression GREATER_THAN_EQUAL expression { handleGreaterThanEqual(); }               |
-        expression EQUAL expression              { handleEqual(); }                          |
-        expression NOT_EQUAL expression          { handleNotEqual(); }
+        assignment                                                                          |
+        SYMBOL          { handleExpressionSymbol($1); }                                     |
+        INT             { handleExpressionIntImmediate($1); }                               |
+        CH_LITERAL      { handleExpressionCharLiteral($1); }                                |
+        expression '+' expression { handleExpressionAddition(); }                           |
+        expression '-' expression { handleExpressionSubtraction(); }                        |
+        expression '*' expression { handleExpressionMultiplication(); }                     |
+        expression '/' expression { handleExpressionDivision(); }                           |
+        expression '&' expression { handleExpressionBitwiseAnd(); }                         |
+        expression '|' expression { handleExpressionBitwiseOr(); }                          |
+        expression '^' expression { handleExpressionBitwiseXor(); }                         |
+        expression SHIFT_LEFT expression    { handleExpressionShiftLeft(); }                |
+        expression SHIFT_RIGHT expression   { handleExpressionShiftRight(); }               |
+        '(' expression ')'                  { handleGroupedExpression(); }                  |
+        SYMBOL parameter_list               { handleExpressionFunctionCall($1); }           |
+        SYMBOL INCREMENT                    { handleExpressionPostIncrement($1); }          |
+        INCREMENT SYMBOL                     { handleExpressionPreIncrement($2); }          |
+        SYMBOL DECREMENT                     { handleExpressionPostDecrement($1); }         |
+        DECREMENT SYMBOL                     { handleExpressionPreDecrement($2); }          |
+        expression LESS_THAN expression          { handleLessThan(); }                      |
+        expression LESS_THAN_EQUAL expression    { handleLessThanEqual(); }                 |
+        expression GREATER_THAN expression       { handleGreaterThan(); }                   |
+        expression GREATER_THAN_EQUAL expression { handleGreaterThanEqual(); }              |
+        expression EQUAL expression              { handleEqual(); }                         |
+        expression NOT_EQUAL expression          { handleNotEqual(); }                      |
+        expression LOGICAL_OR expression         { handleLogicalOr(); }                     |
+        expression LOGICAL_AND expression        { handleLogicalAnd(); }                    |
+        '!' expression                           { handleLogicalNot(); }                    |
+        '~' expression                           { handleBitwiseNot(); }                    |
+        '-' expression                           { handleUnaryNegation(); }
         ;
 
 /* string literal - strings can be concatenated */

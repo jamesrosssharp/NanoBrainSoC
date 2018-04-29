@@ -30,6 +30,8 @@
 
 #include <stdint.h>
 
+#include "labelstore.h"
+
 namespace CodeGen
 {
 
@@ -90,6 +92,9 @@ namespace CodeGen
         void generateBlock(const Syntax::Block* b, std::stringstream& ss,
                            bool& callsFunctions, bool& lastStatementIsReturn);
 
+        void generateStatement(Syntax::Syntagma* s, std::stringstream& ss,
+                           bool& callsFunctions, bool& isReturn);
+
         void generateReturnStatement(const Syntax::ReturnStatement* r, std::stringstream& ss,
                                      bool& callsFunctions);
 
@@ -102,6 +107,8 @@ namespace CodeGen
         void generateDoWhileStatement(const Syntax::DoWhileStatement* w, std::stringstream& ss,
                                      bool& callsFunctions);
         void generateForLoopStatement(const Syntax::ForLoop* l, std::stringstream& ss,
+                                     bool& callsFunctions);
+        void generateSwitchStatement(const Syntax::Switch* s, std::stringstream& ss,
                                      bool& callsFunctions);
 
         void buildAndCheckStandaloneExpression(const Syntax::Syntagma* statement, std::stringstream& ss,
@@ -129,6 +136,8 @@ namespace CodeGen
         Registers16 m_registers16;
 
         bool m_inGlobalScope;
+
+        std::vector<LabelStore::Label> m_breakStack;
 
     };
 

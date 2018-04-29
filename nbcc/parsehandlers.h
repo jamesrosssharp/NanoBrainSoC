@@ -75,3 +75,15 @@ void handleGreaterThan();
 void handleGreaterThanEqual();
 void handleEqual();
 void handleNotEqual();
+
+void handleSwitch();
+void handleDefault();
+void handleBreak();
+void handleCase();
+
+void handleLogicalAnd();
+void handleLogicalOr();
+
+void handleLogicalNot();
+void handleBitwiseNot();
+void handleUnaryNegation();
